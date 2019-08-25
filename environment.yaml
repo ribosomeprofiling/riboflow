@@ -1,0 +1,26 @@
+name: ribo
+channels:
+    - conda-forge               
+    - defaults                  
+    - bioconda      
+    - cyclus
+dependencies:
+    - python=3.6
+    - nextflow=19.04.1
+    - openjdk=8
+    - samtools>=1.4
+    - sra-tools>=2.8.1
+    - fastqc=0.11.8
+    - setuptools 
+    - pip
+    - numpy
+    - pandas
+    - matplotlib
+    - bowtie2=2.3.4.3
+    - hisat2=2.1.0=py36h2d50403_1
+    - pysam
+    - bedtools=2.27.1
+    - cutadapt=1.18
+    - pip:
+      - git+https://github.com/ribosomeprofiling/ribopy.git
+      - git+https://github.com/ribosomeprofiling/rfcommands.git 
