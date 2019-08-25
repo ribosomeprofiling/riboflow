@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3376949.svg)](https://doi.org/10.5281/zenodo.3376949)
+
+
 # RiboFlow
 
 RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline 
