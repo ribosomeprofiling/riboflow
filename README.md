@@ -139,7 +139,7 @@ If you have RNA-Seq data to be paired with ribosome profiling data, see the __Ad
 
 `do_metadata: false`
 
-If you have metadata, see Advanced feature below.
+If you have metadata, see __Advanced Features__ below.
 
 7. Run RiboFlow using the new parameters file `project.yaml`.
 
@@ -163,7 +163,7 @@ Also turn set the do_rnaseq flag to true, in the project file:
 
 `do_rnaseq: true`
 
-Transcript abundance data will be stored in 
+Transcript abundance data will be stored in the output ribo file.
 
 ### Metadata
 
