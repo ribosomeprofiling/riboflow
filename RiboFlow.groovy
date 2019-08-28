@@ -2015,10 +2015,10 @@ RIBO_WITH_RNASEQ_PRE.concat( RIBO_FOR_RNASEQ_EXCLUDED_FOR_MERGE )
 /* Merge Ribos*/
 
 if(do_rnaseq){
-  RIBO_WITH_RNASEQ.set{RIBO_FOR_MERGE_PRE}
+  RIBO_WITH_RNASEQ.into{RIBO_FOR_MERGE_PRE; RIBO_FOR_COUNT}
 }
 else{
-  RIBO_AFTER_CREATION.set{RIBO_FOR_MERGE_PRE}
+  RIBO_AFTER_CREATION.into{RIBO_FOR_MERGE_PRE; RIBO_FOR_COUNT}
 }
 
 RIBO_FOR_MERGE_PRE.map{ sample, ribo -> [ribo]}.flatten().collect()
@@ -2030,12 +2030,20 @@ process merge_ribos{
   
   input:
   file(sample_ribo) from RIBO_FOR_MERGE
+  val(ribo_count) from RIBO_FOR_COUNT.count()
   
   output:
   file("all.ribo") into ALL_RIBO
   
+  script:
+  if(ribo_count > 1){
+    command = "ribopy merge all.ribo ${sample_ribo}"
+  } else {
+    command = "ln -s ${sample_ribo} all.ribo"
+  }
+  
   """
-  ribopy merge all.ribo ${sample_ribo}
+  ${command}
   """ 
   
 }
