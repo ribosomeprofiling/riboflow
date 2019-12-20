@@ -151,6 +151,13 @@ Without Docker:
 
 `nextflow RiboFlow.groovy -params-file project.yaml`
 
+## A Note on References
+
+RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references. 
+The users neede to provide a transcriptome reference and annotation to run this software.
+There is a curated set of RiboFlow references, that users can download and use, in
+[this GitHub repository](https://github.com/ribosomeprofiling/references_for_riboflow)
+
 ## Advanced Features
 
 ### RNA-Seq Data
