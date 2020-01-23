@@ -12,6 +12,7 @@ for processing ribosome profiling data.
 * [Test Run](#test-run)  
 * [Output](#output)  
 * [Actual Run](#actual-run)  
+* [A Note on References](#a-note-on-references)  
 * [Advanced Features](#advanced-features)  
 * [Frequently Asked Questions](#frequently-asked-questions)  
 
