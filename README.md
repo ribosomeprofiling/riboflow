@@ -3,7 +3,7 @@
 
 # RiboFlow
 
-RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline 
+RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline
 for processing ribosome profiling data.
 
 ## Installation
@@ -11,28 +11,28 @@ for processing ribosome profiling data.
 ### Requirements
 
 * [Nextflow](https://www.nextflow.io/)
-* [Docker](https://docs.docker.com/install/) (Optional) 
+* [Docker](https://docs.docker.com/install/) (Optional)
 * [Conda](https://conda.io/en/latest/miniconda.html) (Optional)
 
-First, follow the instructions in [Nextflow website](https://www.nextflow.io/) and install Nextflow. 
+First, follow the instructions in [Nextflow website](https://www.nextflow.io/) and install Nextflow.
 
 The easiest way of using RiboFLow is using Docker.
 If using Docker is not an option, you can install the dependencies using Conda
-and run RiboFlow without Docker. 
+and run RiboFlow without Docker.
 
 ### Docker Option
 
-Install [Docker](https://docs.docker.com/install/). 
+Install [Docker](https://docs.docker.com/install/).
 Here is a [tutorial for Ubuntu.](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
 All remaining dependencies come in the Docker image [ceniklab/riboflow](https://hub.docker.com/r/ceniklab/riboflow).
-This image is automatically pulled by RiboFlow when run with Docker (see test runs below). 
+This image is automatically pulled by RiboFlow when run with Docker (see test runs below).
 
 ### Conda Option
 
 This option has been tested on Linux systems only.
 
-Install  [Conda](https://conda.io/en/latest/miniconda.html). 
+Install  [Conda](https://conda.io/en/latest/miniconda.html).
 
 All other dependencies can be installed using the environment file,
 environment.yaml, in this repository.
@@ -52,7 +52,7 @@ To start using RiboFlow, you need to activate the _ribo_ environment.
 For fresh installations, before running RiboFlow on actual data,
 it is recommended to do a test run.
 
-Clone this repository in a new folder and change your working directory to the RiboFlow folder. 
+Clone this repository in a new folder and change your working directory to the RiboFlow folder.
 ```
 mkdir rf_test_run && cd rf_test_run
 git clone https://github.com/ribosomeprofiling/riboflow.git
@@ -66,7 +66,7 @@ git clone https://github.com/ribosomeprofiling/rf_sample_data.git
 
 ### Run Using Docker
 
-Provide the argument `-profile docker_local` to Nextflow to indicate Docker use. 
+Provide the argument `-profile docker_local` to Nextflow to indicate Docker use.
 
 `nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local`
 
@@ -75,11 +75,11 @@ Provide the argument `-profile docker_local` to Nextflow to indicate Docker use.
 Make sure that you have created the conda environment, called _ribo_,
 using the instructions above. Then activate the conda environment.
 
-`conda activate ribo` 
+`conda activate ribo`
 
 If the above command fails to activate the ribo environment, try
 `source activate ribo`
- 
+
 Now RiboFlow is ready to run.
 
 `nextflow RiboFlow.groovy -params-file project.yaml`
@@ -89,18 +89,18 @@ Now RiboFlow is ready to run.
 Pipeline run may take several minutes.
 When finished, the resulting files are in the `./output` folder.
 
-Mapping statistics are compiled in a csv file called `stats.csv` 
+Mapping statistics are compiled in a csv file called `stats.csv`
 
 ```
 ls output/stats/stats.csv
 ```
 
-Ribosome occupancy data is in a single 
+Ribosome occupancy data is in a single
 [ribo file](https://ribopy.readthedocs.io/en/latest/ribo_file_format.html) called `all.ribo`.
 
 `ls output/ribo/all.ribo`
 
-You can use 
+You can use
 [RiboR](https://github.com/ribosomeprofiling/ribor) or
 [RiboPy](https://github.com/ribosomeprofiling/ribopy) to work with ribo files.
 
@@ -111,13 +111,13 @@ For running RiboFlow on actual data, files must be organized and a parameters fi
 You can examine the sample run above to see an example.
 
 1. Organize your data. The following files are required for RiboFlow
-* **Ribosome profiling sequencing data:** in gzipped fastq files 
+* **Ribosome profiling sequencing data:** in gzipped fastq files
 * **Transcriptome Reference:** Bowtie2 index files
 * **Filter Reference:** Bowtie2 index files (typically for rRNA sequences)
 * **Annotation:** A bed file defining CDS, UTR5 and UTR3 regions.
 * **Transcript Lengths:** A two column tsv file containing transcript lengths
 
-2. Prepare a custom `project.yaml` file. 
+2. Prepare a custom `project.yaml` file.
 You can use the sample file `project.yaml`, provided in this repository,
 as template.
 
@@ -144,16 +144,18 @@ If you have metadata, see __Advanced Features__ below.
 7. Run RiboFlow using the new parameters file `project.yaml`.
 
 Using Docker:
- 
+
 `nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local`
 
 Without Docker:
 
 `nextflow RiboFlow.groovy -params-file project.yaml`
 
+## [Frequently Asked Questions](https://github.com/hakanozadam/riboflow/blob/master/FAQ.md)
+
 ## A Note on References
 
-RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references. 
+RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references.
 The users neede to provide a transcriptome reference and annotation to run this software.
 There is a curated set of RiboFlow references, that users can download and use, in
 [this GitHub repository](https://github.com/ribosomeprofiling/references_for_riboflow)
@@ -183,4 +185,3 @@ Also turn set the metadata flag to true, in the project file:
 `do_metadata: true`
 
 Metadata will be stored in the output ribo file.
-
