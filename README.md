@@ -6,6 +6,15 @@
 RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline
 for processing ribosome profiling data.
 
+## Contents
+
+* [Installation](#installation) 
+* [Test Run](#test-run)  
+* [Output](#output)  
+* [Actual Run](#actual-run)  
+* [Advanced Features](advanced-features)  
+* [Frequently Asked Questions](frequently-asked-questions)  
+
 ## Installation
 
 ### Requirements
@@ -151,8 +160,6 @@ Without Docker:
 
 `nextflow RiboFlow.groovy -params-file project.yaml`
 
-## [Frequently Asked Questions](https://github.com/hakanozadam/riboflow/blob/master/FAQ.md)
-
 ## A Note on References
 
 RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references.
@@ -185,3 +192,5 @@ Also turn set the metadata flag to true, in the project file:
 `do_metadata: true`
 
 Metadata will be stored in the output ribo file.
+
+## [Frequently Asked Questions](https://github.com/hakanozadam/riboflow/blob/master/FAQ.md)
