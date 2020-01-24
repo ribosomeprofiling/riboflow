@@ -63,37 +63,35 @@ To start using RiboFlow, you need to activate the _ribo_ environment.
 For fresh installations, before running RiboFlow on actual data,
 it is recommended to do a test run.
 
-Clone this repository in a new folder and change your working directory to the RiboFlow folder.
-```
-mkdir rf_test_run && cd rf_test_run
-git clone https://github.com/ribosomeprofiling/riboflow.git
-cd riboflow
-```
-
-Obtain a copy of the sample data in the working directory.
-```
-git clone https://github.com/ribosomeprofiling/rf_sample_data.git
-```
 
 ### Run Using Docker
 
-Provide the argument `-profile docker_local` to Nextflow to indicate Docker use.
+```
+# Clone this repository in a new folder and change your working directory to the RiboFlow folder.
+mkdir rf_test_run && cd rf_test_run
+git clone https://github.com/ribosomeprofiling/riboflow.git
+cd riboflow
 
-`nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local`
+# Obtain a copy of the sample data in the working directory.
+git clone https://github.com/ribosomeprofiling/rf_sample_data.git
+nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local
+```
+
+Note that we provided the argument `-profile docker_local` to Nextflow to indicate that RiboFlow will be run via Docker containers. In other words, the steps of RiboFlow will be executed inside Docker containers by Nextflow. 
+Hence, no locally installed software (other than Java and Nextflow) is needed by RiboFlow.  
+
 
 ### Run Using Conda Environment
 
-Make sure that you have created the conda environment, called _ribo_,
-using the instructions above. Then activate the conda environment.
+In Conda option, the steps of RiboFlow are run locally. So, we need to install the dependencies first. This can easily be done via conda. The default profile directs RiboFlow to run locally, so we can simply skip the `-profile` argument. Also note that the conda environment has to be activated before running RiboFlow. 
 
-`conda activate ribo`
+Before running the commands below, make sure that you have created the conda environment, called _ribo_,
+using the instructions above. 
 
-If the above command fails to activate the ribo environment, try
-`source activate ribo`
-
-Now RiboFlow is ready to run.
-
-`nextflow RiboFlow.groovy -params-file project.yaml`
+```
+conda activate ribo
+nextflow RiboFlow.groovy -params-file project.yaml
+```
 
 ## Output
 
@@ -122,11 +120,11 @@ For running RiboFlow on actual data, files must be organized and a parameters fi
 You can examine the sample run above to see an example.
 
 1. Organize your data. The following files are required for RiboFlow
-* **Ribosome profiling sequencing data:** in gzipped fastq files
-* **Transcriptome Reference:** Bowtie2 index files
-* **Filter Reference:** Bowtie2 index files (typically for rRNA sequences)
-* **Annotation:** A bed file defining CDS, UTR5 and UTR3 regions.
-* **Transcript Lengths:** A two column tsv file containing transcript lengths
+   * **Ribosome profiling sequencing data:** in gzipped fastq files
+   * **Transcriptome Reference:** Bowtie2 index files
+   * **Filter Reference:** Bowtie2 index files (typically for rRNA sequences)
+   * **Annotation:** A bed file defining CDS, UTR5 and UTR3 regions.
+   * **Transcript Lengths:** A two column tsv file containing transcript lengths
 
 2. Prepare a custom `project.yaml` file.
 You can use the sample file `project.yaml`, provided in this repository,
