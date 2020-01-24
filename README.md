@@ -5,6 +5,7 @@
 
 RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline
 for processing ribosome profiling data. As output, it generates [ribo files](https://ribopy.readthedocs.io/en/latest/ribo_file_format.html) that can be analyzed using [RiboR](https://github.com/ribosomeprofiling/ribor) or [RiboPy](https://github.com/ribosomeprofiling/ribopy).
+RiboFlow belongs to a [software ecosystem](https://ribosomeprofiling.github.io/) desgined to work with ribosome profiling data..
 
 ## Contents
 
