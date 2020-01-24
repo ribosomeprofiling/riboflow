@@ -89,8 +89,23 @@ Before running the commands below, make sure that you have created the conda env
 using the instructions above. 
 
 ```
+# List the environments to make sure that ribo environment exists
+conda env list
+
+# Activate the ribo environment
 conda activate ribo
+
+# Get RiboFlow repository
+mkdir rf_test_run && cd rf_test_run
+git clone https://github.com/ribosomeprofiling/riboflow.git
+cd riboflow
+
+# Obtain a copy of the sample data in the working directory.
+git clone https://github.com/ribosomeprofiling/rf_sample_data.git
+
+# Finally run RiboFlow
 nextflow RiboFlow.groovy -params-file project.yaml
+
 ```
 
 ## Output
