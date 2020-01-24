@@ -11,10 +11,10 @@ for processing ribosome profiling data.
 * [Installation](#installation) 
 * [Test Run](#test-run)  
 * [Output](#output)  
-* [Actual Run](#actual-run)  
+* [RiboFlow on Your Data](#riboflow-on-your-data)  
 * [A Note on References](#a-note-on-references)  
 * [Advanced Features](#advanced-features)  
-* [Frequently Asked Questions](#frequently-asked-questions)  
+* [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
 
 ## Installation
 
@@ -115,7 +115,7 @@ You can use
 [RiboPy](https://github.com/ribosomeprofiling/ribopy) to work with ribo files.
 
 
-## Actual Run
+## RiboFlow on Your Data
 
 For running RiboFlow on actual data, files must be organized and a parameters file must be prepared.
 You can examine the sample run above to see an example.
@@ -142,14 +142,14 @@ see `configs/local.config`.
 
 `do_rnaseq: false`
 
-If you have RNA-Seq data to be paired with ribosome profiling data, see the __Advanced Features__ below.
+If you have RNA-Seq data to be paired with ribosome profiling data, see the [Advanced Features](#advanced-features) below.
 
 
-6. Metadata is optional for RiboFlow.. If you do NOT have metadata, in the project file, set
+6. Metadata is optional for RiboFlow. If you do NOT have metadata, in the project file, set
 
 `do_metadata: false`
 
-If you have metadata, see __Advanced Features__ below.
+If you have metadata, see [Advanced Features](#advanced-features) below.
 
 7. Run RiboFlow using the new parameters file `project.yaml`.
 
@@ -164,7 +164,7 @@ Without Docker:
 ## A Note on References
 
 RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references.
-The users neede to provide a transcriptome reference and annotation to run this software.
+The users need to provide a transcriptome reference and annotation to run this software.
 There is a curated set of RiboFlow references, that users can download and use, in
 [this GitHub repository](https://github.com/ribosomeprofiling/references_for_riboflow)
 
@@ -194,4 +194,4 @@ Also turn set the metadata flag to true, in the project file:
 
 Metadata will be stored in the output ribo file.
 
-## [Frequently Asked Questions](https://github.com/hakanozadam/riboflow/blob/master/FAQ.md)
+## [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)
