@@ -15,6 +15,7 @@ for processing ribosome profiling data. As output, it generates [ribo files](htt
 * [A Note on References](#a-note-on-references)  
 * [Advanced Features](#advanced-features)  
 * [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
+* [Release Notes](https://github.com/ribosomeprofiling/riboflow/blob/master/CHANGELOG.md)  
 
 ## Installation
 
@@ -194,4 +195,7 @@ Also turn set the metadata flag to true, in the project file:
 
 Metadata will be stored in the output ribo file.
 
-## [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)
+## [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
+
+  
+## [Release Notes](https://github.com/ribosomeprofiling/riboflow/blob/master/CHANGELOG.md)  
