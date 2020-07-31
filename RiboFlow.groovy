@@ -2050,3 +2050,12 @@ process merge_ribos{
 
 // Merge Ribos
 ////////////////////////////////////////////////////////////////////////////////
+
+
+workflow.onComplete {
+    println "Pipeline RiboFlow completed!"
+    println "Started at  $workflow.start" 
+    println "Finished at $workflow.complete"
+    println "Time elapsed: $workflow.duration"
+    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+}
