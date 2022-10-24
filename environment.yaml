@@ -21,6 +21,7 @@ dependencies:
     - pysam
     - bedtools=2.27.1
     - cutadapt=1.18
+    - umi_tools
     - pip:
       - git+https://github.com/ribosomeprofiling/ribopy.git
       - git+https://github.com/ribosomeprofiling/rfcommands.git 

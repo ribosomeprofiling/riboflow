@@ -13,7 +13,10 @@ do_check_file_existence : true
 
 # Remove duplicate reads based on their length
 # and mapped position
-deduplicate: true
+dedup_method: "umi_tools"
+
+umi_tools_extract_arguments: "-p \"^(?P<umi_1>.{12})(?P<discard_1>.{4}).+$\" --extract-method=regex"
+umi_tools_dedup_arguments:   "--read-length"
 
 # If you have RNA-Seq data additionally, 
 # that you want to pair with your ribosome profiling data,
@@ -21,7 +24,7 @@ deduplicate: true
 # AND PROVIDE RNA-Seq data
 # under the key rnaseq in this file. See below.
 # If you don't have RNA-Seq data, set this flag to false
-do_rnaseq: true
+do_rnaseq: false
 
 # If you don't have metadata set do_metadata to false.
 # If you have metadata, provide yaml files for the experiments
@@ -30,7 +33,9 @@ do_metadata: true
 
 # These arguments are used for clipping adapters by cutadapt.
 # (see https://cutadapt.readthedocs.io/en/stable/guide.html )
-clip_arguments: '-u 1 -a CTGTAGGCACCATCAAT --overlap=4 --trimmed-only --maximum-length=40 --minimum-length=15 --quality-cutoff=28'
+# Note that we had to adjust the minimum and maximum lengths 
+# because we are trimming the UMIs after CLIPPING adapters.
+clip_arguments: ' -a AAAAAAAAAACAAAAAAAAAA --overlap=4 --trimmed-only --maximum-length=56 --minimum-length=31 --quality-cutoff=28'
 
 # If you don't want to perform and adapter clipping, 
 # you can comment the above option and use the option below.   
@@ -59,13 +64,13 @@ alignment_arguments:
 ###############################################################################
 # RiboPy parameters for ribo file generation.
 ribo:
-    ref_name:        "appris-v1"
+    ref_name:        "mouse-v2"
     metagene_radius: 50
     left_span:       35
     right_span:      10
     read_length:
-       min: 28
-       max: 32
+       min: 21
+       max: 40
     coverage: true
    
 ###############################################################################
@@ -106,6 +111,8 @@ output:
 # 
 # If metadata or RNA-Seq data are provided, they must match these names
 # See below as an example. 
+
+
 
 
 input:
