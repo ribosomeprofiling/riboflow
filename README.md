@@ -147,9 +147,10 @@ conda env list
 # Activate the ribo environment
 conda activate ribo
 
-# Get RiboFlow repository
+# Get RiboFlow repository and change to the branch to the `umi_devel`.
 mkdir rf_test_run && cd rf_test_run
 git clone https://github.com/ribosomeprofiling/riboflow.git
+git checkout -track remotes/origin/umi_devel
 cd riboflow
 
 # Obtain a copy of the sample data in the working directory.
