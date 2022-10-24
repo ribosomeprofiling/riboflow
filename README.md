@@ -150,8 +150,8 @@ conda activate ribo
 # Get RiboFlow repository and change to the branch to the `umi_devel`.
 mkdir rf_test_run && cd rf_test_run
 git clone https://github.com/ribosomeprofiling/riboflow.git
-git checkout -track remotes/origin/umi_devel
 cd riboflow
+git checkout -track remotes/origin/umi_devel
 
 # Obtain a copy of the sample data in the working directory.
 git clone https://github.com/ribosomeprofiling/rf_sample_data.git
