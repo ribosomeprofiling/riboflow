@@ -40,10 +40,6 @@ This [new version](https://github.com/ribosomeprofiling/riboflow/tree/umi_devel)
 
 First, follow the instructions in [Nextflow website](https://www.nextflow.io/) and install Nextflow.
 
-The easiest way of using RiboFLow is using Docker.
-If using Docker is not an option, you can install the dependencies using Conda
-and run RiboFlow without Docker.
-
 ### Docker Option
 
 Install [Docker](https://docs.docker.com/install/).
