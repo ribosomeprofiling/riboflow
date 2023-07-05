@@ -13,7 +13,7 @@ function cleanup {
 trap cleanup EXIT
 
 
-docker build -t ceniklab/riboflow:latest . 
-docker run -it ceniklab/riboflow:latest apt list | sed 's/\x1b\[[0-9;]*m//g' > ./apt.list
-docker run -it ceniklab/riboflow:latest conda list > ./conda.list
+docker build -t hakanozadam/riboflow:latest . 
+docker run -it hakanozadam/riboflow:latest apt list | sed 's/\x1b\[[0-9;]*m//g' > ./apt.list
+docker run -it hakanozadam/riboflow:latest conda list > ./conda.list
 docker images
