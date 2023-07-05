@@ -1,7 +1,10 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 
 RUN apt-get update --fix-missing && \
-  apt-get install -q -y wget curl bzip2 libbz2-dev git build-essential zlib1g-dev locales vim fontconfig ttf-dejavu
+  apt-get install -q -y wget curl bzip2 libbz2-dev git build-essential zlib1g-dev locales vim fontconfig 
 
 
 # Set the locale
@@ -11,12 +14,15 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8     
 
 # Install conda
-RUN curl -LO http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda3 -b && \
-    rm Miniconda3-latest-Linux-x86_64.sh 
-ENV PATH=/miniconda3/bin:${PATH}
+# This version uses python version 3.7
+# So we prefer to use it with ribopy.
+ARG CONDA=Miniconda3-latest-Linux-x86_64.sh
+RUN curl -LO http://repo.continuum.io/miniconda/$CONDA && \
+    bash $CONDA -p /miniconda3 -b && \
+    rm $CONDA 
+ENV PATH /miniconda3/bin:${PATH}
 
-# Install conda dependencies
+# # Install conda dependencies
 ADD environment.yaml /
 ADD VERSION /
 RUN pwd
@@ -27,5 +33,9 @@ RUN conda config --set always_yes yes --set changeps1 no && \
     conda config --get && \
     conda update -q conda && \
     conda info -a && \
-    conda env update -q -n root --file environment.yaml && \
-    conda clean --tarballs --index-cache --lock
+    conda env create -f environment.yaml  
+ #   conda env update -n root --file environment.yaml && \
+
+# Make the "ribo" environment the default.
+ENV PATH /miniconda3/envs/ribo/bin:$PATH
+RUN /bin/bash -c "source activate ribo"

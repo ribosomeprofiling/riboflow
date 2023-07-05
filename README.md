@@ -9,14 +9,6 @@ for processing ribosome profiling data. As output, it generates [ribo files](htt
 RiboFlow belongs to a [software ecosystem](https://ribosomeprofiling.github.io/) desgined to work with ribosome profiling data.
 
 
-## Ribosome Profiling Data with UMIs
-
-If there are unique molecular identifier (UMI) sequences in your data,
-you can use the new pre-release version of RiboFlow in the [umi_develop branch](https://github.com/ribosomeprofiling/riboflow/tree/umi_devel).
-This [new version](https://github.com/ribosomeprofiling/riboflow/tree/umi_devel) uses umi_tools to collapse duplicate reads.
-
-
-
 ![Overview](/docs/figures/ecosystem_overview.jpg "Ribo Ecosystem Overview")
 
 ## Contents
@@ -24,7 +16,8 @@ This [new version](https://github.com/ribosomeprofiling/riboflow/tree/umi_devel)
 * [Installation](#installation) 
 * [Test Run](#test-run)  
 * [Output](#output)  
-* [RiboFlow on Your Data](#riboflow-on-your-data)  
+* [RiboFlow on Your Data](#riboflow-on-your-data)
+* [UMIs](#working-with-unique-molecular-identifiers)  
 * [A Note on References](#a-note-on-references)  
 * [Advanced Features](#advanced-features)  
 * [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
@@ -45,7 +38,7 @@ First, follow the instructions in [Nextflow website](https://www.nextflow.io/) a
 Install [Docker](https://docs.docker.com/install/).
 Here is a [tutorial for Ubuntu.](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
 
-All remaining dependencies come in the Docker image [ceniklab/riboflow](https://hub.docker.com/r/ceniklab/riboflow).
+All remaining dependencies come in the Docker image [hakanozadam/riboflow](https://hub.docker.com/r/hakanozadam/riboflow).
 This image is automatically pulled by RiboFlow when run with Docker (see test runs below).
 
 ### Conda Option
@@ -183,6 +176,77 @@ Using Docker:
 Without Docker:
 
 `nextflow RiboFlow.groovy -params-file project.yaml`
+
+## Working with Unique Molecular Identifiers
+Unique Molecular Identifiers (UMIs) can be ligated to either side of the molecules and 
+they allow labeling molecules uniqely. This way UMIs can be used to deduplicate mapped reads
+for more accurate quantification.
+
+If there are UMIs in your ribosome profiling data, Riboflow can trim them and deduplicate reads based on UMIs. 
+
+RiboFlow extracts UMIs and stores them in the Fastq headers and uses the UMIs in deduplication 
+(instead of position based read collapsing). For this purpose RiboFlow uses 
+[umi_tools](https://github.com/CGATOxford/UMI-tools).
+
+
+### Project File
+
+Here we explain the related parts of the project file to be able to use UMIs feature of Riboflow.
+
+Also, we provide a working example of project file in this repository: *project_umi.yaml*.
+
+The following parameter must be set:
+```
+dedup_method: "umi_tools"
+```
+
+Also, users must set the following two parameters: `umi_tools_extract_arguments` and `umi_tools_dedup_arguments`.
+
+For example: 
+```
+umi_tools_extract_arguments: "-p \"^(?P<umi_1>.{12})(?P<discard_1>.{4}).+$\" --extract-method=regex"
+umi_tools_dedup_arguments:   "--read-length"
+```
+
+The above example takes the first 12 nucleotides from the 5' end, discards the 4 nucleotides downstream and writes the 12 nt UMI sequence to the header.
+The second parameter tells umi_tools to use read lengths IN ADDITION to UMI sequencing in collapsing reads. Note that these two arguments are directly provided to umi_tools. So users are encouraged to familirize themselves with [umi_tools](https://umi-tools.readthedocs.io/en/latest/).
+
+### Test Run with UMIs
+
+We provide a mini dataset, with two samples, to try Riboflow with sequencing reads having UMIs.
+In this sample dataset, the first 12 nucleotides on the 5' end of the reads are UMIs.
+Four nucleotides following the UMIs need to be discarded.
+On the 3' end of the reads, there are adapters having the sequence `AAAAAAAAAACAAAAAAAAAA`.
+The parameters of this sample run are provided in the file *project_umi.yaml*.
+Below are the steps to process this data.
+
+
+```
+# List the environments to make sure that ribo environment exists
+conda env list
+
+# Activate the ribo environment
+conda activate ribo
+
+# Get RiboFlow repository
+mkdir rf_test_run && cd rf_test_run
+git clone https://github.com/ribosomeprofiling/riboflow.git
+cd riboflow
+
+# Obtain a copy of the sample data in the working directory.
+git clone https://github.com/ribosomeprofiling/rf_sample_data.git
+
+# Finally run RiboFlow
+nextflow RiboFlow.groovy -params-file project_umi.yaml
+
+# At the end of the run
+# checkk the ribo file
+ribopy info output_umi/ribo/all.ribo
+```
+
+ ### UMI support for RNA-Seq
+ 
+ In the current version, UMIs are supported for ribosome profiling data only. So RNA-Seq libraries can either be used without deduplication or the reads can be collapsed based on position.
 
 ## A Note on References
 

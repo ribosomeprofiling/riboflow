@@ -5,7 +5,7 @@ channels:
     - bioconda      
     - cyclus
 dependencies:
-    - python=3.6
+    - python=3.7
     - nextflow=19.04.1
     - openjdk=8
     - samtools>=1.4
@@ -13,14 +13,16 @@ dependencies:
     - fastqc=0.11.8
     - setuptools 
     - pip
-    - numpy
-    - pandas
-    - matplotlib
+    - numpy=1.19.5
+    - pandas=1.1.5
+    - matplotlib=3.3.4
     - bowtie2=2.3.4.3
-    - hisat2=2.1.0=py36h2d50403_1
-    - pysam
+    - hisat2=2.2.0=py37hfa133b6_4
+    - pysam=0.16.0.1
     - bedtools=2.27.1
     - cutadapt=1.18
     - pip:
+      - scipy==1.5.4
+      - umi_tools==1.1.1
       - git+https://github.com/ribosomeprofiling/ribopy.git
       - git+https://github.com/ribosomeprofiling/rfcommands.git 

@@ -1,9 +1,9 @@
 
-docker login -u ceniklab
+docker login -u hakanozadam
 
 version=$(cat ../VERSION | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p')
 echo "version: $version"
 
 # push the image
-docker push ceniklab/riboflow:latest
-docker push ceniklab/riboflow:$version
+docker push hakanozadam/riboflow:latest
+docker push hakanozadam/riboflow:$version
