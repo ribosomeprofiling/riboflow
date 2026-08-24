@@ -1,0 +1,204 @@
+##########################################################################
+#####  Transcriptome path example — umicollapse dedup, human v2/v3 refs #####
+#####  RNA-seq enabled (do_rnaseq: true, dedup_method: position)        #####
+##########################################################################
+#
+# Runs the full pipeline (genome + bowtie2 transcriptome → .ribo) with RNA-seq:
+#   Filter:        references_for_riboflow/filter/human/v2
+#   Transcriptome: references_for_riboflow/transcriptome/human/v3
+#   Genome:        rf_sample_data/genome/star_index  (prebuilt, ships in-repo)
+#   RNA-seq FASTQs: rf_sample_data/fastq/rnaseq/GSM8325891+895 (SE, matched replicates)
+#
+# Samples: GSM8325903 and GSM8325907 (GSE269734) carry a 12-nt UMI + 4-nt spacer at read
+# start (ribo-seq). GSM8325891 / GSM8325895 are their matched RNA-seq replicates, keyed
+# under the ribo-seq sample names so RIBOPY_RNASEQ_SET can join them.
+# GSE269734 published in Liu et al., Nat Biotechnol 44(5):797-809 (2026),
+# doi:10.1038/s41587-025-02718-5
+# RNA-seq uses position dedup (no UMIs in RNA-seq; umicollapse reserved for ribo-seq path).
+#
+# Prerequisites:
+#   1. Filter index (ships in-repo):
+#      references_for_riboflow/filter/human/v2/human_rtRNA*.bt2
+#   2. Transcriptome index (ships in-repo):
+#      references_for_riboflow/transcriptome/human/v3/riboflow_annot_and_ref/appris_human_v3_selected*.bt2
+#   3. STAR genome index (ships prebuilt):
+#      Ships prebuilt in the sample data repo at
+#      rf_sample_data/genome/star_index/ — nothing to do.
+#
+# Run:
+#   nextflow run main.nf -profile default -params-file example_umi_uniq.yaml
+#
+##########################################################################
+
+do_fastqc: false
+do_check_file_existence: true
+
+# ── Pipeline modules ──────────────────────────────────────────────────────────
+do_rnaseq: true
+do_strand_split: true
+do_bigwig: true        # strand-specific bigWig coverage tracks (deepTools); off by default
+
+# ── Adapter trimming (ribo-seq) ───────────────────────────────────────────────
+# GSE269734 libraries: 150 bp reads with a poly-A adapter; no 5' trim needed (the
+# 12-nt UMI + 4-nt spacer is removed by umi_tools below, not by cutadapt).
+clip_arguments: '-a AAAAAAAAAACAAAAAAAAAA --overlap=4 --trimmed-only --maximum-length=56 --minimum-length=31 --quality-cutoff=28'
+# 12-nt UMI + 4-nt spacer at read start.
+umi_tools_extract_arguments: "-p \"^(?P<umi_1>.{12})(?P<discard_1>.{4}).+$\" --extract-method=regex"
+umicollapse_arguments: ""
+dedup_method: "umicollapse"
+
+# ── Alignment ─────────────────────────────────────────────────────────────────
+alignment_arguments:
+   filter: '-L 15 --no-unal --norc'        # bowtie2 filter flags
+   transcriptome: '-L 15 --no-unal --norc' # bowtie2 transcriptome flags
+   # note: alignment_arguments.genome is unused — genome alignment is STAR, configured via star.ribo_arguments
+
+star:
+   output_transcriptome_bam: false
+   ribo_arguments: '--alignEndsType EndToEnd --seedSearchStartLmax 15 --outFilterType Normal --outFilterMultimapNmax 20 --alignSJDBoverhangMin 1 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 150'
+   # RNA-seq: ENCODE flags; multimappers retained here, unique-only enforced downstream.
+   rnaseq_arguments: '--outFilterType BySJout --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000'
+   #
+   # ── Index-generation settings (only used when genome_fasta + gtf are set below) ──
+   # Uncomment and set these when using build-from-FASTA mode:
+   #   sjdb_overhang: 28        # read_length - 1; adjust to your library's read length
+   #   index_dir: /path/to/cache  # recommended: built index is reused across runs (avoids rebuild on resume)
+   #   index_args: ''           # extra genomeGenerate flags; set '--genomeSAindexNbases 7' for very small genomes only
+
+# ── Alignment path selection ──────────────────────────────────────────────────
+# genome.run (default true) and transcriptome.run (default false) are independent.
+# Set genome.run: false to run transcriptome-only (transcriptome.run must be true).
+genome:
+  run: true
+  unique_only: true   # FILTER: keep uniquely-mapping reads only (-q 255); stats use the unique-only layout
+  mapping_quality_cutoff: 255   # FILTER -q, used only when unique_only: false
+  samtools_filter_arguments: "-F 2308"   # exclude unmapped(4)+secondary(256)+supplementary(2048)
+  # ^ any samtools view read-filtering args (-f/-F/-G/-e/-d/-L/-s/…). -q is NOT
+  #   accepted here: unique_only / mapping_quality_cutoff own the MAPQ filter and the stats mode.
+  # OPTIONAL — unused while unique_only: true, and these are the defaults anyway:
+  # samtools_count_arguments:          # how stats.csv COUNTS the kept reads (samtools view -c); no effect on the BAM
+  #   primary:   "-F 2304"             #   one record per aligned read (not secondary/supplementary)
+  #   secondary: "-f 256"              #   extra alignments of multi-mappers
+  #   unique:    "-q 255 -F 2304"      #   what the unique/multi breakdown calls "unique" (STAR MAPQ 255);
+  #                                    #   only used when unique_only: false
+
+# ── Bowtie2 transcriptome → ribopy .ribo ─────────────────────────────────────
+transcriptome:
+  run: true
+  mapping_quality_cutoff: 10   # bowtie2: 10=confident; 20=more strict; 40=unique only
+  samtools_filter_arguments: "-F 2308"   # own key — no longer inherits the genome route's mask
+
+ribo:
+  ref_name: appris_human_v3
+  metagene_radius: 50
+  left_span: 35
+  right_span: 15
+  read_length:
+    min: 15                # = 31 nt clip floor  - 16 nt UMI+discard
+    max: 40                # = 56 nt clip ceiling - 16 nt UMI+discard
+  coverage: true
+
+  # ── Metadata embedded into .ribo files ───────────────────────────────────
+  # ribometa attaches experiment-wide metadata (e.g. the run config itself) to
+  # every .ribo file. metadata.files attaches a different YAML per sample —
+  # useful for cell line, treatment condition, batch info, etc.
+  # Retrieve after a run with: ribopy meta info <sample>.ribo
+  ribometa: ./example_umi_uniq.yaml    # embed this params file as the experiment record
+
+  metadata:
+    base: ./meta                        # path prefix applied to all files below
+    files:
+      GSM8325903: GSM8325903.yaml      # see meta/GSM8325903.yaml
+      GSM8325907: GSM8325907.yaml      # see meta/GSM8325907.yaml
+
+# ── RNA-seq path ──────────────────────────────────────────────────────────────
+# SE. Sample IDs must match ribo-seq (GSM8325903, GSM8325907) so RIBOPY_RNASEQ_SET joins
+# correctly — hence the ribo-seq keys pointing at the GSM8325891 / GSM8325895 accessions,
+# which are the matched RNA-seq replicates of those two ribo-seq libraries.
+# RNA-seq dedup_method: position — umicollapse reserved for ribo-seq only.
+rnaseq:
+  fastq_base: ""
+  clip_arguments: '-u 1 --quality-cutoff=28 --minimum-length=20'
+  filter_arguments: '-L 15 --no-unal'
+  dedup_method: "position"
+  umi_tools_extract_arguments: ""
+  genome:
+    unique_only: true               # FILTER: unique reads only (-q 255); cutoff below is then ignored
+    mapping_quality_cutoff: 255     # FILTER -q, used only when unique_only: false
+    samtools_filter_arguments: "-F 2308"   # exclude unmapped(4)+secondary(256)+supplementary(2048)
+    # OPTIONAL — unused while unique_only: true; defaults shown (PE keys apply automatically):
+    # samtools_count_arguments:        # how stats.csv COUNTS the kept reads; PE keys exist only here
+    #   primary:   "-F 2304"          #   one record per aligned read
+    #   secondary: "-f 256"           #   extra alignments of multi-mappers
+    #   unique:    "-q 255 -F 2304"   #   definition of "unique" in the breakdown; used only when unique_only: false
+    #   paired_end_fragment:  "-f 64"  #   PE: count R1 only, so counts are per fragment not per mate
+    #   paired_end_secondary: "-f 320" #   PE: secondary records, R1 only
+  transcriptome:
+    mapping_quality_cutoff: 10
+    samtools_filter_arguments: "-F 2308"
+    alignment_arguments: '-L 15 --no-unal'
+  fastq:
+    # Each lane is a single-end string OR a paired-end 2-element [R1, R2] list.
+    # Paired-end is supported on the genome path for dedup_method: none | umicollapse
+    # (not position, and not the transcriptome path). PE example:
+    #   GSM8325903:
+    #     - [./.../lane1_R1.fastq.gz, ./.../lane1_R2.fastq.gz]   # PE lane 1
+    #     - [./.../lane2_R1.fastq.gz, ./.../lane2_R2.fastq.gz]   # PE lane 2
+    GSM8325903:
+      - ./rf_sample_data/fastq/rnaseq/GSM8325891/SRR29385983.fastq.gz
+    GSM8325907:
+      - ./rf_sample_data/fastq/rnaseq/GSM8325895/SRR29385979.fastq.gz
+
+# ── Output directories ────────────────────────────────────────────────────────
+output:
+   individual_lane_directory: 'individual'
+   merged_lane_directory: 'merged'
+   intermediates:
+      base: 'umi_intermediates'
+      clip: 'clip'
+      log: 'log'
+      transcriptome_alignment: 'transcriptome_alignment'
+      filter: 'filter'
+      genome_alignment: 'genome_alignment'
+      bam_to_bed: 'bam_to_bed'
+      quality_filter: 'quality_filter'
+      alignment_ribo: 'alignment_ribo'
+   output:
+      base: 'umi_output'
+      log: 'log'
+      fastqc: 'fastqc'
+      stats: 'stats'
+      bigwigs: 'bigwigs'
+      alignments: 'alignments'
+      ribo: 'ribo'
+
+# ── Input — references and FASTQs (ribo-seq) ──────────────────────────────────
+input:
+   reference:
+      filter: ./references_for_riboflow/filter/human/v2/human_rtRNA*
+
+      # ── STAR genome index — pick ONE of the two modes below ──────────────────
+      #
+      # MODE A — Pre-built index (you already have a STAR index directory):
+      #   Set 'genome' to the index directory path.
+      #   Leave genome_fasta and gtf absent.
+      #   star.sjdb_overhang / star.index_dir / star.index_args are ignored.
+      genome: ./rf_sample_data/genome/star_index
+      #
+      # MODE B — Build index from FASTA+GTF (pipeline runs genomeGenerate first):
+      #   Comment out 'genome' above and uncomment the three lines below.
+      #   Also uncomment star.sjdb_overhang (and optionally star.index_dir) in the star: block above.
+      # genome_fasta: /path/to/GRCh38.primary_assembly.genome.fa
+      # gtf:          /path/to/gencode.v48.annotation.gtf
+
+      transcriptome: ./references_for_riboflow/transcriptome/human/v3/riboflow_annot_and_ref/appris_human_v3_selected*
+      regions: ./references_for_riboflow/transcriptome/human/v3/riboflow_annot_and_ref/appris_human_v3_actual_regions.bed
+      transcript_lengths: ./references_for_riboflow/transcriptome/human/v3/riboflow_annot_and_ref/appris_human_v3_transcript_lengths.tsv
+
+   fastq_base: ""
+
+   fastq:
+      GSM8325903:
+        - ./rf_sample_data/fastq/ribosome_profiling/GSM8325903/SRR29385971.fastq.gz
+      GSM8325907:
+        - ./rf_sample_data/fastq/ribosome_profiling/GSM8325907/SRR29385967.fastq.gz

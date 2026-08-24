@@ -1,0 +1,14 @@
+name: BOWTIE2_FILTER
+description: rRNA/tRNA contaminant filter; unaligned reads feed genome alignment. Ports filter (:344).
+keywords: [bowtie2, filter, rRNA, contaminant]
+input:
+  - meta: { type: map }
+  - fastq: { type: file }
+  - index: { description: "[index_base, [bowtie2 index files]]" }
+output:
+  - bam:       { description: "[meta, *.filter.bam]" }
+  - aligned:   { description: "[meta, *.aligned.filter.fastq.gz]" }
+  - unaligned: { description: "[meta, *.unaligned.filter.fastq.gz]" }
+  - log:       { description: "[meta, *.filter.log]" }
+ext:
+  - args: bowtie2 flags (default params.alignment_arguments.filter)

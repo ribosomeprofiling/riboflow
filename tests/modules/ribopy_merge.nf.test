@@ -1,0 +1,24 @@
+// Module unit test: RIBOPY_MERGE collapses the collected per-sample .ribo files
+// into a single all.ribo. Runs in stub mode (no ribopy needed).
+nextflow_process {
+
+    name "RIBOPY_MERGE"
+    script "modules/local/ribopy_merge.nf"
+    process "RIBOPY_MERGE"
+
+    test("merges per-sample .ribo into all.ribo (stub)") {
+        options "-stub-run"
+        when {
+            process {
+                """
+                input[0] = [ file("\${projectDir}/tests/stub/fastq/S1.l1.fastq.gz"),
+                             file("\${projectDir}/tests/stub/fastq/S2.l1.fastq.gz") ]
+                """
+            }
+        }
+        then {
+            assert process.success
+            assert process.out.ribo.get(0).endsWith('all.ribo')
+        }
+    }
+}

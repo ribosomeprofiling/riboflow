@@ -1,0 +1,12 @@
+name: UMITOOLS_EXTRACT
+description: Extract UMIs with umi_tools (umicollapse path only). Ports extract_umi_via_umi_tools (:280).
+keywords: [umi, umi_tools, dedup]
+input:
+  - meta:  { type: map }
+  - reads: { type: file, description: Clipped FASTQ (single file SE, [R1, R2] list PE) }
+output:
+  - reads:  { description: "[meta, *.umi_extracted.fastq.gz] (R1)" }
+  - reads2: { description: "[meta, *.umi_extracted_R2.fastq.gz] (R2, PE only)" }
+  - log:    { description: "[meta, *.umi_extracted.log]" }
+ext:
+  - args: umi_tools extract flags (default params.umi_tools_extract_arguments)

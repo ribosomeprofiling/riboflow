@@ -1,0 +1,7 @@
+name: RIBOPY_MERGE
+description: Merge all per-sample .ribo files into a single all.ribo via `ribopy merge`.
+keywords: [ribopy, ribo, merge]
+input:
+  - ribo_files: { type: file, description: "collected list of all per-sample .ribo files" }
+output:
+  - ribo: { description: "all.ribo" }

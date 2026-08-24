@@ -1,0 +1,10 @@
+name: RFC_DEDUP
+description: Coordinate-based dedup via rfc dedup. Ports genome_deduplicate_position (:1069) / transcriptome_deduplicate_position (:764).
+keywords: [dedup, rfc]
+input:
+  - meta: { type: map }
+  - bed:  { type: file, description: merged pre-dedup BED }
+output:
+  - bed: { description: "[meta, *.post_dedup.bed]" }
+ext:
+  - prefix

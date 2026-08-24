@@ -1,0 +1,119 @@
+##########################################################################
+#####  Paired-end RNA-seq — genome alignment (dedup: umicollapse)    #####
+##########################################################################
+#
+# Purpose: validate the paired-end RNA-seq genome path end-to-end with real
+# aligners. A PE lane is a 2-element [R1, R2] list under `rnaseq.fastq`;
+# single-end lanes are a plain string.
+#
+# Run (from the repo root):
+#   nextflow run main.nf -profile default -params-file example_rnaseq_pe.yaml
+#
+# Reuses the prebuilt index that ships in the sample data repo (Mode A). Repoint
+# input.reference.genome at a full GRCh38 index for real work; the default resource
+# profile already reserves 48 GB for STAR, which covers that (~27 GB resident) plus the
+# coordinate sort.
+#
+# ── Data (all shipped by Quickstart step 4) ────────────────────────────────
+#  RNA-seq (the path under test): SRR1039508, human airway smooth muscle,
+#    paired-end 63 bp — GEO GSE52778, Himes et al. 2014 (PLoS ONE 9:e99625).
+#    50,000 read pairs, the first 50k of the run - no selection applied, so the
+#    alignment rate is representative.
+#  Ribo-seq (mandatory passenger): GSM1606107 from the same sample data used by
+#    the other examples.
+#  Genome: a pre-built human STAR index (Mode A). Set input.reference.genome below,
+#    or let the benchmark harness inject it from benchmarks/references/.
+#  Filter: the human rRNA/tRNA bowtie2 index from references_for_riboflow.
+#
+# ── Two constraints of the PE path ─────────────────────────────────────────
+#  1. Genome-only — paired-end through the transcriptome path is unsupported
+#     and rejected at startup, hence `transcriptome.run: false` below.
+#  2. `rnaseq.dedup_method: position` is unsupported for PE and likewise
+#     rejected; use `umicollapse` (below) or `none`.
+#
+##########################################################################
+
+do_check_file_existence: true
+do_fastqc:               false
+do_rnaseq:               true
+do_strand_split:         false
+do_bigwig:               false
+
+# ── Ribo-seq (mandatory passenger) ────────────────────────────────────────────
+# The pipeline has no RNA-seq-only mode, so a ribo-seq input is required even when
+# RNA-seq is the path under test. These are the same reads the other examples use.
+# Ignore their outputs.
+dedup_method:                none
+umi_tools_extract_arguments: ""
+umicollapse_arguments:       ""
+clip_arguments: '-u 1 -a CTGTAGGCACCATCAAT --overlap=4 --trimmed-only --maximum-length=40 --minimum-length=15 --quality-cutoff=28'
+
+genome:
+  run:                    true
+  unique_only: false  # FILTER: keep multi-mappers (apply mapping_quality_cutoff); stats add a unique/multi breakdown
+  mapping_quality_cutoff: 0   # FILTER -q, used only when unique_only: false (0 = keep all multi-mappers)
+  samtools_filter_arguments: "-F 2052"   # exclude unmapped(4)+supplementary(2048); KEEPS secondary(256)
+  # ^ any samtools view read-filtering args (-f/-F/-G/-e/-d/-L/-s/…). -q is NOT
+  #   accepted here: unique_only / mapping_quality_cutoff own the MAPQ filter and the stats mode.
+  samtools_count_arguments:          # how stats.csv COUNTS the kept reads (samtools view -c); no effect on the BAM
+    primary:   "-F 2304"             #   one record per aligned read (not secondary/supplementary)
+    secondary: "-f 256"              #   extra alignments of multi-mappers
+    unique:    "-q 255 -F 2304"      #   what the unique/multi breakdown calls "unique" (STAR MAPQ 255);
+                                     #   only used when unique_only: false
+
+transcriptome:
+  run: false                                 # required: PE is genome-only (see above)
+  mapping_quality_cutoff: 10                 # unused while run: false
+  samtools_filter_arguments: "-F 2308"       # unused while run: false
+
+input:
+  reference:
+    genome: ./rf_sample_data/genome/star_index   # prebuilt index (Mode A)
+    filter: ./references_for_riboflow/filter/human/v2/human_rtRNA*
+  fastq_base: ""
+  fastq:
+    GSM1606107:
+      - ./rf_sample_data/fastq/ribosome_profiling/GSM1606107/SRR1795425.fastq.gz
+
+# ── RNA-seq (the path under test) ─────────────────────────────────────────────
+rnaseq:
+  fastq_base:                  ""
+  clip_arguments:              '-u 5 -l 40 --quality-cutoff=28 --minimum-length=20'   # production RNA-seq clip
+  filter_arguments:            '-L 15 --no-unal'
+  dedup_method:                umicollapse   # PE supports umicollapse or none, NOT position
+  # ⚠️  PSEUDO-UMI — NOT A REAL UMI LAYOUT. This library has no UMIs. umicollapse
+  # requires a UMI in the read name, so the first 6 bp of R1 are declared as one
+  # purely to exercise the PE dedup branch. The resulting duplicate counts are
+  # meaningless as biology. Replace this pattern with your actual UMI layout
+  # before using this file as a template for real data.
+  umi_tools_extract_arguments: '--extract-method=string --bc-pattern=NNNNNN'
+  genome:
+    unique_only: false              # FILTER: keep multi-mappers; stats add a unique/multi breakdown
+    mapping_quality_cutoff: 0       # FILTER -q, used only when unique_only: false
+    samtools_filter_arguments: "-f 2 -F 2052"   # -f 2: properly-paired records only (PE lanes only — it would
+                                                #   drop every single-end read); -F 2052: drop unmapped+supplementary,
+                                                #   KEEP secondary alignments
+    samtools_count_arguments:        # how stats.csv COUNTS the kept reads; PE keys exist only here
+      primary:   "-F 2304"          #   one record per aligned read
+      secondary: "-f 256"           #   extra alignments of multi-mappers
+      unique:    "-q 255 -F 2304"   #   definition of "unique" in the breakdown; used only when unique_only: false
+      paired_end_fragment:  "-f 64"  #   PE: count R1 only, so counts are per fragment not per mate
+      paired_end_secondary: "-f 320" #   PE: secondary records, R1 only
+  transcriptome:                             # unused: PE through the transcriptome is rejected at startup
+    mapping_quality_cutoff:  10
+    samtools_filter_arguments: "-F 2308"
+    alignment_arguments:    '-L 15 --no-unal'
+  fastq:
+    # Paired-end lane = a 2-element [R1, R2] list. Add further lanes as further
+    # list entries; each is merged per sample after alignment.
+    SRR1039508:
+      - ['./rf_sample_data/fastq/rnaseq_pe/SRR1039508/SRR1039508_all_1.fastq.gz',
+         './rf_sample_data/fastq/rnaseq_pe/SRR1039508/SRR1039508_all_2.fastq.gz']
+
+output:
+  individual_lane_directory: individual
+  merged_lane_directory:     merged
+  intermediates:
+    base: ./rnaseq_pe_intermediates
+  output:
+    base: ./rnaseq_pe_output

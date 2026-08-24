@@ -1,0 +1,10 @@
+name: CUTADAPT_CLIP_RNASEQ
+description: Adapter/quality trimming of RNA-seq reads with cutadapt (SE or PE).
+keywords: [cutadapt, trimming, rnaseq]
+input:
+  - meta: { type: map }
+  - reads: { type: file, description: "raw RNA-seq reads (R1[, R2])" }
+output:
+  - reads: { description: "[meta, *.rnaseq.clipped_R1.fastq.gz]" }
+  - reads2: { description: "[meta, *.rnaseq.clipped_R2.fastq.gz] (PE only)" }
+  - log: { description: "[meta, *.rnaseq.clipped.log]" }

@@ -1,0 +1,8 @@
+name: STATS_INDIVIDUAL
+description: Per-lane genome alignment-stats row (cutadapt+bowtie2 logs, rfc parse-star-log, qpass/dedup counts). Ports individual_genome_alignment_stats (:1528). Shared by the ribo-seq and RNA-seq genome paths via ext.stats_label and ext.unique_only.
+keywords: [stats, rfc, genome]
+input:
+  - meta: { type: map }
+  - "clip_log, filter_log, genome_log, genome_secondary_count, qpass_{total,primary,secondary,unique}, dedup_{total,primary,secondary,unique}": { type: file }
+output:
+  - csv: { description: "[meta, *.${stats_label}_individual.csv] (label default 'genome')" }

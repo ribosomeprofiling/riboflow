@@ -1,0 +1,13 @@
+name: SPLIT_DEDUP_BAM
+description: Split a merged dedup BAM back to a lane by read group; ext.emit_bed_counts adds per-lane BED + counts. Ports split_genome_dedup_bam_to_individual (:1264) / tx (:952).
+keywords: [samtools, split, dedup]
+input:
+  - meta: { type: map }
+  - merged_bam: { type: file }
+  - merged_bai: { type: file }
+output:
+  - bam:    { description: "[meta, *.bam, *.bam.bai]" }
+  - bed:    { description: "[meta, *.genome.post_dedup.bed] (optional)" }
+  - counts: { description: "[meta, total, primary, secondary] (optional)" }
+ext:
+  - prefix, emit_bed_counts

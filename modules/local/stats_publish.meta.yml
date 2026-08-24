@@ -1,0 +1,9 @@
+name: STATS_PUBLISH
+description: Publish final stats.csv / individual_stats.csv. Ports publish_stats (:1758).
+keywords: [stats, publish]
+input:
+  - individual_stats: { type: file }
+  - merged_stats: { type: file }
+output:
+  - individual: { description: individual_stats.csv }
+  - merged:     { description: stats.csv }

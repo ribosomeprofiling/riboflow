@@ -1,20 +1,87 @@
+# Java / JVM
 *.class
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
 *.ear
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+.mtj.tmp/
 
-# NextFlow Specific
-.nextflow.log*
+# Nextflow
 .nextflow
+.nextflow.log*
+.nextflow.history*
+work/
+nextflow_logs/
 
-# Docker Specific
+# Apptainer/Singularity image cache (apptainer profile pulls the .sif here)
+apptainer_cache/
+
+# Conda env cache (conda profile builds the riboflow env here)
+conda_cache/
+
+# nf-test working directory
+.nf-test/
+
+# Leftover stub run artifacts (not referenced by conf/test.config or any nf-test;
+# the wiring tests assert workflow.success, not output snapshots). The active stub
+# fixtures under tests/stub/{fastq,filter,genome,transcriptome} ARE tracked.
+tests/stub/work_intermediates/
+tests/stub/work_output/
+tests/stub/gating_intermediates/
+tests/stub/gating_output/
+
+# Large reference / sample-data repos (cloned separately, not vendored here)
+rf_sample_data_riboflow_genome/
+rf_sample_data/
+references_for_riboflow/
+
+# DSL1 parity reference (kept locally, not part of the DSL2 pipeline)
+RiboFlow.groovy
+
+# Pipeline run artifacts (regenerable; should not be committed)
+output/
+intermediates/
+position_intermediates/
+position_output/
+umi_intermediates/
+umi_output/
+rnaseq_pe_intermediates/
+rnaseq_pe_output/
+index_cache/
+
+# Docker
 *apt.list
 *conda.list
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Misc logs
+*.log
+.Rproj.user
+
+pe_test/
+
+benchmarks/
+__pycache__/
+*.pyc
+tests/stub/txbam_intermediates/
+tests/stub/txbam_output/
+tests/stub/bothtx_intermediates/
+tests/stub/bothtx_output/
+tests/stub/multimap_intermediates/
+tests/stub/multimap_output/
+
+# Real cutadapt/bowtie2/STAR logs used by tests/modules/*stats_individual.nf.test
+!tests/fixtures/stats/*.log

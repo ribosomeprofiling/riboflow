@@ -1,0 +1,11 @@
+name: BOWTIE2_TRANSCRIPTOME_RNASEQ
+description: RNA-seq transcriptome alignment with bowtie2 (SE or PE) against the transcriptome index.
+keywords: [bowtie2, transcriptome, rnaseq]
+input:
+  - meta: { type: map }
+  - reads: { type: file, description: "filtered RNA-seq reads (R1[, R2])" }
+  - index_base: { type: string }
+  - index_files: { type: file, description: "bowtie2 transcriptome index" }
+output:
+  - bam: { description: "[meta, *.rnaseq.transcriptome_alignment.bam]" }
+  - log: { description: "[meta, *.rnaseq.transcriptome_alignment.log]" }

@@ -1,0 +1,40 @@
+# Per-sample experiment metadata for GSM8325907.
+# Embedded into GSM8325907.ribo via ribopy create --expmeta.
+# Retrieve with: ribopy meta info GSM8325907.ribo
+
+sample_id: GSM8325907
+organism: Homo sapiens
+
+library:
+  protocol: ribosome_profiling
+  umi_length: 12
+  spacer_length: 4
+  nuclease: RNase I
+  fragment_size_range: [15, 40]        # after the 16 nt UMI+spacer is removed
+  adapter_3prime: AAAAAAAAAACAAAAAAAAAA
+
+sequencing:
+  instrument: Illumina NovaSeq X
+  run_type: single_end
+  read_length: 150
+  sra_run: SRR29385967
+  geo_accession: GSM8325907
+  geo_series: GSE269734
+
+publication:
+  authors: Liu Y, Rao S, Hoskins I, et al. (Cenik C, corresponding)
+  title: Translation efficiency covariation identifies conserved coordination patterns across cell types
+  journal: Nature Biotechnology
+  year: 2026
+  volume: 44
+  issue: 5
+  pages: 797-809
+  doi: 10.1038/s41587-025-02718-5
+
+rnaseq_pair:
+  geo_accession: GSM8325895           # matched RNA-seq replicate
+  sra_run: SRR29385979
+
+subsample:
+  reads: 86760                         # preselected to reads aligning to the shipped reference
+  selection: aligned-to-genome.fa

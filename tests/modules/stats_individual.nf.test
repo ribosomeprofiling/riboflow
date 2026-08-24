@@ -1,0 +1,58 @@
+// Real (non-stub) unit test for STATS_INDIVIDUAL against real cutadapt / bowtie2 /
+// STAR logs captured in tests/fixtures/stats. Needs python3 + rfc on PATH.
+// Guards the accounting identities the published stats.csv relies on:
+//   genome_aligned_once + genome_aligned_many + genome_unaligned == filter_kept
+// and pins the intermediates row schema (no primary/total alignment rows).
+nextflow_process {
+
+    name "STATS_INDIVIDUAL"
+    script "modules/local/stats_individual.nf"
+    process "STATS_INDIVIDUAL"
+
+    test("genome stats rows are consistent and label-parsed") {
+        when {
+            process {
+                """
+                def fx = "\${projectDir}/tests/fixtures/stats/GSM8325903.1"
+                input[0] = [ [id: 'GSM8325903', lane: '1'],
+                             file("\${fx}.clipped.log"),
+                             file("\${fx}.filter.log"),
+                             file("\${fx}.genome_alignment.log"),
+                             file("\${fx}.genome_alignment.secondary.count"),
+                             file("\${fx}.genome_alignment.qpass.total.count"),
+                             file("\${fx}.genome_alignment.qpass.primary.count"),
+                             file("\${fx}.genome_alignment.qpass.secondary.count"),
+                             file("\${fx}.dedup.total.count"),
+                             file("\${fx}.dedup.primary.count"),
+                             file("\${fx}.dedup.secondary.count"),
+                             file("\${fx}.dedup.unique.count"),
+                             file("\${fx}.genome_alignment.qpass.unique.count") ]
+                """
+            }
+        }
+        then {
+            assert process.success
+            def csv  = new File(process.out.csv.get(0).get(1))
+            def rows = csv.readLines().drop(1).collectEntries { def p = it.split(','); [(p[0]): p[1] as long] }
+
+            // Values straight from the fixture logs
+            assert rows.total_reads         == 42580
+            assert rows.clipped_reads       == 41688
+            assert rows.filter_kept         == 41669
+            assert rows.filtered_out        == 19
+            assert rows.genome_aligned_once == 37519
+            assert rows.genome_aligned_many == 18
+            assert rows.genome_unaligned    == 4132
+
+            // Accounting identities
+            assert rows.filtered_out + rows.filter_kept == rows.clipped_reads
+            assert rows.genome_aligned_once + rows.genome_aligned_many + rows.genome_unaligned == rows.filter_kept
+            assert rows.genome_aligned_once + rows.genome_aligned_many == rows.filter_kept - rows.genome_unaligned
+
+            // Row schema: once/many convention only, no primary/total rows at the alignment stage
+            assert !rows.containsKey('genome_primary_alignments')
+            assert !rows.containsKey('genome_total_alignments')
+            assert rows.containsKey('genome_secondary_alignments')
+        }
+    }
+}

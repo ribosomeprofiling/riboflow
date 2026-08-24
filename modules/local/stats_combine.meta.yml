@@ -1,0 +1,9 @@
+name: STATS_COMBINE
+description: Combine per-row stats CSVs + add percentages (rfc merge overall-stats, rfc genome-stats-percentage). Aliased COMBINE_INDIVIDUAL/COMBINE_MERGED. Ports :1627,:1718.
+keywords: [stats, rfc, merge]
+input:
+  - stat_tables: { type: file, description: collected list of CSVs }
+output:
+  - csv: { description: "${prefix}.csv" }
+ext:
+  - prefix

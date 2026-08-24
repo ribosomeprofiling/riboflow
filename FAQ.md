@@ -1,31 +1,41 @@
 # FAQ
 
-1. **Does RiboFlow work with genomic reference?**  
-No, RiboFlow is designed to work with transcriptomic references only.
-If a gene has alternative isoforms, typically exactly one isoform is included in the reference transcriptome.
-Optionally, RiboFlow can map the reads, which didn't map to the transcriptome, using HISAT2 to the genome. Yet these mapping results are only used for diagnostic purposes and they have no effect on the resulting ribo file. Hence thoese reads don't change the downstream analysis.
+**RiboFlow** is a Nextflow DSL2 pipeline for ribosome-profiling and RNA-seq data, with STAR-based **genome alignment** alongside the bowtie2 **transcriptome → `.ribo`** path. Entry point: `main.nf`.
 
-2. **Where can I find references for organisms other than human?**  
-Here is a [repository](https://github.com/ribosomeprofiling/references_for_riboflow)
-of officially supported RiboFlow references for various organisms.
-We plan to add more organisms in the future.
+### Does it produce `.ribo` files?
 
-3. **How can I prepare an alternative transcriptomic reference for RiboFlow?**  
-You can take a look at our [notebook](https://github.com/ribosomeprofiling/references_for_riboflow/blob/master/transcriptome/human/v1/scripts/appris_explore.ipynb)
-where we explain how we built the human refernece transcriptome for RiboFlow.
-[That repository](https://github.com/ribosomeprofiling/references_for_riboflow) also contains the scripts used to generate the reference files. 
+Yes, with `transcriptome.run: true` (bowtie2 → `ribopy create` → `ribopy merge` into `all.ribo`). The genome path (`genome.run: true`) emits dedup BAM/BED, stats and optional bigWigs, but no `.ribo`. Run either or both.
 
-4. **I have Unique Molecular Identifiers (UMIs) in my sequencing data. Can RiboFlow use UMIs to deduplicate the reads?**  
-While UMIs are NOT supported at the moment, we are working on adding UMI support to RiboFlow in the coming months.
+### What outputs does it produce?
 
-5. **Does RiboFlow provide PCR deduplication?**  
-Yes, RiboFlow supports deduplication based on read alignment position. More explicitly, if the two (or more) reads have the same length and they map to the exact same position, those reads will be considered as duplicates and collapsed into one read. Deduplication can be turned on or off by setting the parameter `deduplicate` in the [parameters file](https://github.com/ribosomeprofiling/riboflow/blob/master/project.yaml)
+```
+<out>/
+  alignments/ribo/{individual,merged,stranded}/   # dedup BAM + BED
+  bigwigs/ribo/                                   # if do_bigwig
+  fastqc/                                         # if do_fastqc
+  ribo/                                           # *.ribo + all.ribo (if transcriptome.run)
+  stats/{genome,transcriptome}/{stats,individual_stats}.csv
+  rnaseq/{alignments,bigwigs,fastqc,stats}/       # if do_rnaseq, same layout
+```
 
-6. **Can I use RNA-Seq data with RiboFlow?**  
-Yes, you can. In the  [parameters file](https://github.com/ribosomeprofiling/riboflow/blob/master/project.yaml) file, set `do_rnaseq: true` and under `rnaseq` node (see the example in the parameters file) you can pair ribosome profiling data with RNA-Seq data. Please note that RiboFlow processes RNA-Seq data and ribosome profiling data in a parallel fashion. Hence, RNA-Seq reads are mapped in single end mode. If your data is coming from paired-end sequencing, you can simply provide the reads coming from the first round of sequencing (first file from each pair).
+`do_bigwig` and `do_fastqc` default to `false`. Intermediates are cached under `intermediates/` via `storeDir`.
 
-7. **Does RiboFlow work with references where genes don't have 3'UTRs?**  
-No, all reference genes must have their 3' UTRs annotated.
+### Does it support UMIs?
 
-8. **In my particular annotation, thre is a set of genes missing 3' or 5' UTRs. How can I incorporate these genes in the RiboFlow reference build?**  
-We suggest the following simple workaround for this problem. You can take a fixed number of (say, for example, 50) nucleotides preceeding / proceeding the start / stop site in the genomic sequence. Attach those fragments to your transcript sequence and annotate them as 3' / 5' UTRs. Then you can complile this transcriptome sequence + annotation as a valid RiboFlow reference.
+Yes: `dedup_method: "umicollapse"` plus `umi_tools_extract_arguments` for your UMI layout. See `examples/example_umi_uniq.yaml`.
+
+### Does it support paired-end RNA-seq?
+
+Yes, on the RNA-seq **genome** path — give `[R1, R2]` per sample (see `examples/example_rnaseq_pe.yaml`). Ribo-seq is single-end only. Rejected at startup: PE with `rnaseq.dedup_method: "position"` (use `umicollapse` or `none`), and PE on the RNA-seq transcriptome path.
+
+### Can I run it without Docker?
+
+Yes. `environment.yaml` is a single conda env with every tool (`umicollapse` from bioconda); use `-profile conda`. It is Linux-only — on macOS use the Docker/Apptainer image.
+
+### How are stats generated?
+
+Per-lane counts come from the cutadapt, bowtie2 and STAR logs plus the qpass/dedup count files, then combined by [`rfc`](https://github.com/ribosomeprofiling/RFCommands) into `stats/*/stats.csv` and `individual_stats.csv`.
+
+### Where do I get references?
+
+You provide them: `input.reference.filter` (bowtie2 rRNA index prefix), `input.reference.genome` (STAR index dir), and for `.ribo` also `transcriptome`, `regions`, `transcript_lengths`. [references_for_riboflow](https://github.com/ribosomeprofiling/references_for_riboflow) works here. For the STAR index either build it yourself with the pinned STAR version, or set `genome_fasta` + `gtf` and let the pipeline run `genomeGenerate` (see README).

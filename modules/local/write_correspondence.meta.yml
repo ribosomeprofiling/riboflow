@@ -1,0 +1,7 @@
+name: WRITE_CORRESPONDENCE
+description: Publish the sample/lane -> FASTQ correspondence table. Ports write_fastq_correspondence (:182).
+keywords: [bookkeeping]
+input:
+  - correspondence: { type: file }
+output:
+  - txt: { description: index_fastq_correspondence.txt }
