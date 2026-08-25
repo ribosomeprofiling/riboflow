@@ -1,0 +1,11 @@
+name: CUTADAPT_CLIP
+description: Adapter trimming with cutadapt (per lane). Ports clip (RiboFlow.groovy:257).
+keywords: [trimming, adapter, cutadapt, ribo-seq]
+input:
+  - meta: { type: map, description: "[id, lane, strand]" }
+  - fastq: { type: file, description: Input FASTQ (gzipped) }
+output:
+  - reads: { description: "[meta, *.clipped.fastq.gz]" }
+  - log:   { description: "[meta, *.clipped.log]" }
+ext:
+  - args: cutadapt flags (default params.clip_arguments)

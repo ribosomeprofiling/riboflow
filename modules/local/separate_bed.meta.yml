@@ -1,0 +1,11 @@
+name: SEPARATE_BED
+description: Split merged post-dedup BED back to a lane by col 7; ext.emit_counts adds per-lane counts. Ports separate_genome_bed_post_dedup (:1120) / tx (:801).
+keywords: [bed, awk, split]
+input:
+  - meta: { type: map }
+  - merged_bed: { type: file }
+output:
+  - bed:    { description: "[meta, *.post_dedup.bed]" }
+  - counts: { description: "[meta, total, primary, secondary] (optional)" }
+ext:
+  - prefix, emit_counts

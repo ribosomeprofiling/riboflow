@@ -1,0 +1,12 @@
+name: RFC_EXTRACT_DEDUP_READS
+description: Extract reads from a qpass BAM matching a dedup BED -> post-dedup BAM; ext.emit_counts adds merged counts. Ports genome_convert_dedup_bed_to_bam_position (:1162) / tx (:859).
+keywords: [rfc, bam, dedup]
+input:
+  - meta: { type: map }
+  - dedup_bed: { type: file }
+  - qpass_bam: { type: file }
+output:
+  - bam:    { description: "[meta, *.bam, *.bam.bai]" }
+  - counts: { description: "[meta, total, primary, secondary] (optional)" }
+ext:
+  - prefix, emit_counts

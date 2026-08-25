@@ -1,0 +1,10 @@
+name: SAMTOOLS_MERGE
+description: Merge per-lane BAMs into one per-sample BAM. Ports merge_genome_qpass_bam (:634) + tx merges.
+keywords: [samtools, merge]
+input:
+  - meta: { type: map, description: per-sample }
+  - bams: { type: file, description: list of per-lane BAMs }
+output:
+  - bam: { description: "[meta, *.bam, *.bam.bai]" }
+ext:
+  - prefix

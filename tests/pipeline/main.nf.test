@@ -1,0 +1,168 @@
+// Pipeline-level wiring tests. Each stub-runs the whole DAG with the tiny `test`
+// profile fixtures (no aligners required) and asserts the workflow completes. This
+// codifies the manual stub matrix into CI-checkable tests.
+//
+// Nested params are set through `-c tests/pipeline/*.config`, never `--parent.child`:
+// on Nextflow 26.04.x a dotted CLI param REPLACES its parent map (e.g.
+// `--star.output_transcriptome_bam true` wiped star.ribo_arguments and STAR was
+// handed the literal string `null`). Top-level scalars (`--dedup_method`) are fine.
+nextflow_pipeline {
+
+    name "Pipeline stub matrix"
+    script "main.nf"
+
+    // NOTE: conf/test.config defaults dedup_method to 'position', so this case
+    // passes --dedup_method none explicitly. With no dedup, the merged qpass BAM
+    // is the only genome BAM a run produces, so it must reach the output dir —
+    // that publish rule was silently dead until the `enabled:`-closure fix (a
+    // closure is never resolved for `enabled:`; the condition lives in `saveAs`).
+    test("genome path - dedup none") {
+        options "-stub-run --dedup_method none"
+        then {
+            assert workflow.success
+            def merged = new File("${projectDir}/tests/stub/work_output/alignments/ribo/merged")
+            assert merged.list().any { it.endsWith('.genome.qpass.merged.bam') }
+            assert merged.list().any { it.endsWith('.genome.qpass.merged.bam.bai') }
+            // The 7-column sample.lane-tagged BED is an intermediate, never published.
+            def indiv = new File("${projectDir}/tests/stub/work_output/alignments/ribo/individual")
+            assert !indiv.list().any { it.contains('.with_sample_index.') }
+        }
+    }
+
+    test("genome path - dedup position") {
+        options "-stub-run --dedup_method position"
+        then {
+            assert workflow.success
+            // Per-sample SEPARATE_BED fans back out to every lane (S1 has 2 lanes).
+            def indiv = new File("${projectDir}/tests/stub/work_intermediates/genome/alignment_ribo/individual")
+            assert indiv.list().contains('S1.1.genome.post_dedup.bed')
+            assert indiv.list().contains('S1.2.genome.post_dedup.bed')
+            assert indiv.list().contains('S2.1.genome.post_dedup.bed')
+        }
+    }
+
+    test("genome path - dedup umicollapse") {
+        options "-stub-run --dedup_method umicollapse"
+        then {
+            assert workflow.success
+            def indiv = new File("${projectDir}/tests/stub/work_intermediates/genome/alignment_ribo/individual")
+            assert indiv.list().contains('S1.1.post_dedup.bam')
+            assert indiv.list().contains('S1.2.post_dedup.bam')
+            assert indiv.list().contains('S1.1.genome.post_dedup.bed')
+        }
+    }
+
+    test("genome path - STAR transcriptome-projected BAM dedup") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/tx_bam_dedup.config"
+        then {
+            assert workflow.success
+            // Its own tree and filenames, never the bowtie2 transcriptome route's.
+            def d = new File("${projectDir}/tests/stub/txbam_intermediates/star_transcriptome/alignment_ribo/merged")
+            assert d.list().contains('S1.star_transcriptome.post_dedup.bed')
+        }
+    }
+
+    test("both transcriptome routes write to different trees") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/both_tx_routes.config"
+        then {
+            assert workflow.success
+            def bt2  = new File("${projectDir}/tests/stub/bothtx_intermediates/transcriptome/alignment_ribo/merged")
+            def star = new File("${projectDir}/tests/stub/bothtx_intermediates/star_transcriptome/alignment_ribo/merged")
+            assert bt2.list().contains('S1.transcriptome.post_dedup.bed')
+            assert star.list().contains('S1.star_transcriptome.post_dedup.bed')
+            assert !bt2.list().any { it.contains('star_transcriptome') }
+        }
+    }
+
+    test("genome path - multi-mapper stats mode (unique_only false)") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/multimap.config"
+        then {
+            assert workflow.success
+            // Multi-mapper mode emits the extra unique count from SAMTOOLS_QPASS.
+            def qf = new File("${projectDir}/tests/stub/multimap_intermediates/genome/quality_filter")
+            assert qf.list().any { it.endsWith('.genome_alignment.qpass.unique.count') }
+        }
+    }
+
+    test("transcriptome path - bowtie2 to .ribo alongside genome") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/tx_alongside.config"
+        then {
+            assert workflow.success
+        }
+    }
+
+    test("transcriptome path only - genome.run false") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/tx_only.config"
+        then {
+            assert workflow.success
+        }
+    }
+
+    test("rnaseq path - genome + transcriptome") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_se_tx.config"
+        then {
+            assert workflow.success
+        }
+    }
+
+    // ── Paired-end RNA-seq (genome path) ────────────────────────────────────────
+    // These use the PE fixture (tests/pipeline/rnaseq_pe.config): each lane is a
+    // 2-element [R1, R2] list. Genome-only (transcriptome PE is unsupported).
+
+    test("rnaseq PE genome path - umicollapse (--paired)") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/no_tx.config"
+        then {
+            assert workflow.success
+        }
+    }
+
+    test("rnaseq PE genome path - dedup none") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/rnaseq_pe_none.config -c ${projectDir}/tests/pipeline/no_tx.config"
+        then {
+            assert workflow.success
+            def merged = new File("${projectDir}/tests/stub/work_output/rnaseq/alignments/genome/merged")
+            assert merged.list().any { it.endsWith('.rnaseq.genome.qpass.merged.bam') }
+            assert merged.list().any { it.endsWith('.rnaseq.genome.qpass.merged.bam.bai') }
+        }
+    }
+
+    // Gating check: with dedup on, the qpass BAM must stay in intermediates (the
+    // dedup BAM is the published artifact). Runs against its own output base so a
+    // dedup-none case above can never leave a stale BAM that fakes a pass here.
+    test("rnaseq PE genome path - umicollapse does not publish the qpass bam") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/publish_gating.config -c ${projectDir}/tests/pipeline/no_tx.config"
+        then {
+            assert workflow.success
+            def merged = new File("${projectDir}/tests/stub/gating_output/rnaseq/alignments/genome/merged")
+            assert merged.list().any { it.endsWith('.rnaseq.dedup.bam') }
+            assert !merged.list().any { it.endsWith('.qpass.merged.bam') }
+        }
+    }
+
+    test("rnaseq PE + position is rejected") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/rnaseq_pe_position.config"
+        then {
+            assert workflow.failed
+            // Raised by error() in the workflow body during DAG construction, before any
+            // task runs — so it lands in stdout, not errorReport (which only a task
+            // failure populates).
+            assert workflow.stdout.any { it.contains("dedup_method=position is not yet supported") }
+        }
+    }
+
+    test("rnaseq PE + transcriptome path is rejected") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/rnaseq_pe_tx.config"
+        then {
+            assert workflow.failed
+            // Same as above: pre-execution error() goes to stdout, not errorReport.
+            assert workflow.stdout.any { it.contains("not yet supported for the transcriptome path") }
+        }
+    }
+
+    test("genome path - build STAR index from FASTA+GTF (stub)") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/build_star_index.config"
+        then {
+            assert workflow.success
+        }
+    }
+}

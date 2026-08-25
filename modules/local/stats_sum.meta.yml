@@ -1,0 +1,11 @@
+name: STATS_SUM
+description: Sum per-lane stats into a per-sample row; ext.use_merged_counts applies rfc update-dedup-counts (dedup != none). Ports sum_individual_genome_alignment_stats (:1677).
+keywords: [stats, rfc, sum]
+input:
+  - meta: { type: map }
+  - stat_files: { type: file }
+  - "dedup_{total,primary,secondary}": { type: file, description: merged counts or placeholder }
+output:
+  - csv: { description: "[meta, *.genome_merged.csv]" }
+ext:
+  - use_merged_counts

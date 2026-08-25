@@ -1,0 +1,10 @@
+name: DEEPTOOLS_BAMCOVERAGE
+description: Strand-specific bigWigs via deeptools bamCoverage (strand from meta.strand). Ports genome_create_strand_specific_bigwigs (:1391).
+keywords: [deeptools, bigwig, coverage]
+input:
+  - meta:  { type: map }
+  - bam:   { type: file }
+  - bai:   { type: file }
+  - assay: { type: string, description: "filename label: 'ribo' for ribo-seq, 'rna' for RNA-seq" }
+output:
+  - bigwig: { description: "[meta, *.<assay>.plus.bigWig, *.<assay>.minus.bigWig]  (assay = ribo or rna)" }

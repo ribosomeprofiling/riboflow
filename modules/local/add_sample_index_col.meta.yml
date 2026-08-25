@@ -1,0 +1,8 @@
+name: ADD_SAMPLE_INDEX_COL
+description: Tag each BED record with sample.lane in column 7 (position dedup). Ports add_sample_index_col_to_genome_bed (:1012).
+keywords: [bed, awk]
+input:
+  - meta: { type: map }
+  - bed:  { type: file }
+output:
+  - bed: { description: "[meta, *.genome.with_sample_index.bed]" }

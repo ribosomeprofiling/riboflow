@@ -1,0 +1,10 @@
+name: BAM_TO_BED
+description: BAM->BED with empty-input guard; ext.append_index adds sample.lane as col 7. Ports individual_genome_bam_to_bed (:983) / transcriptome_qpass_bam_to_bed (:715).
+keywords: [bedtools, bamtobed]
+input:
+  - meta: { type: map }
+  - bam:  { type: file }
+output:
+  - bed: { description: "[meta, *.bed]" }
+ext:
+  - prefix, append_index

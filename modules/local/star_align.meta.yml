@@ -1,0 +1,13 @@
+name: STAR_ALIGN
+description: STAR genome alignment; optionally emits a transcriptome-projected BAM. Ports genome_alignment (:401).
+keywords: [star, align, genome]
+input:
+  - meta: { type: map }
+  - fastq: { type: file }
+  - genome_dir: { type: directory, description: STAR index }
+output:
+  - bam:               { description: "[meta, *.genome_alignment.bam]" }
+  - transcriptome_bam: { description: "[meta, *.transcriptome_alignment.bam] (optional)" }
+  - aligned/unaligned: { description: genome aligned/unaligned FASTQ }
+  - log:               { description: STAR Log.final.out }
+  - secondary_count:   { description: count of secondary alignments }

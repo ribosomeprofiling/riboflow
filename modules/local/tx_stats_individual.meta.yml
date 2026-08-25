@@ -1,0 +1,8 @@
+name: TX_STATS_INDIVIDUAL
+description: Per-lane transcriptome alignment-stats row (clip/filter/bowtie2 logs + qpass/dedup totals). Shared by the ribo-seq and RNA-seq transcriptome paths via ext.stats_label.
+keywords: [stats, transcriptome]
+input:
+  - meta: { type: map }
+  - "tx_log, clip_log, filter_log, qpass_total, dedup_total": { type: file }
+output:
+  - csv: { description: "[meta, *.${stats_label}_individual.csv] (label default 'transcriptome')" }

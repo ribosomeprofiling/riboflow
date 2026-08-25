@@ -1,0 +1,12 @@
+name: UMICOLLAPSE_DEDUP
+description: UMI-aware dedup via bioconda umicollapse CLI (JVM flags via _JAVA_OPTIONS). Replaces the DSL1 java11 jar. ext.emit_counts adds merged counts. Ports genome_deduplicate_umicollapse (:1208) / tx (:916).
+keywords: [umicollapse, dedup, umi]
+input:
+  - meta: { type: map }
+  - bam:  { type: file, description: merged qpass BAM }
+  - bai:  { type: file }
+output:
+  - bam:    { description: "[meta, *.bam, *.bam.bai]" }
+  - counts: { description: "[meta, total, primary, secondary] (optional)" }
+ext:
+  - prefix, emit_counts, jvm_opts (default '-Xms512m -Xmx32g -Xss256m'), args

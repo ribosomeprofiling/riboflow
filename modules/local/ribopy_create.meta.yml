@@ -1,0 +1,10 @@
+name: RIBOPY_CREATE
+description: Build a per-sample .ribo file from the merged transcriptome dedup BED via `ribopy create`.
+keywords: [ribopy, ribo, transcriptome]
+input:
+  - meta: { type: map }
+  - dedup_bed: { type: file, description: "merged per-sample transcriptome dedup BED" }
+  - regions_bed: { type: file, description: "transcript region annotation BED" }
+  - lengths_tsv: { type: file, description: "transcript lengths TSV" }
+output:
+  - ribo: { description: "[meta, <sample>.ribo]" }
