@@ -1,0 +1,10 @@
+name: RFC_DEDUP
+description: Coordinate-based dedup via rfc dedup.
+keywords: [dedup, rfc]
+input:
+  - meta: { type: map }
+  - bed:  { type: file, description: merged pre-dedup BED }
+output:
+  - bed: { description: "[meta, *.post_dedup.bed]" }
+ext:
+  - prefix

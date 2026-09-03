@@ -1,290 +1,309 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3376949.svg)](https://doi.org/10.5281/zenodo.3376949)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.3376949-blue)](https://doi.org/10.5281/zenodo.3376949)
 
-![RiboFlow](/docs/figures/riboflow_logo.jpg "RiboFlow Logo")
+![RiboFlow](docs/figures/riboflow_logo.jpg "RiboFlow Logo")
 
-# RiboFlow #
+# RiboFlow
 
-RiboFlow is a [Nextflow](https://www.nextflow.io/) based pipeline
-for processing ribosome profiling data. As output, it generates [ribo files](https://ribopy.readthedocs.io/en/latest/ribo_file_format.html) that can be analyzed using [RiboR](https://github.com/ribosomeprofiling/ribor) or [RiboPy](https://github.com/ribosomeprofiling/ribopy).
-RiboFlow belongs to a [software ecosystem](https://ribosomeprofiling.github.io/) desgined to work with ribosome profiling data.
+RiboFlow is a [Nextflow](https://www.nextflow.io/) pipeline for processing ribosome profiling data. It produces [ribo files](https://ribopy.readthedocs.io/en/latest/ribo_file_format.html) that can be analyzed with [RiboR](https://github.com/ribosomeprofiling/ribor) or [RiboPy](https://github.com/ribosomeprofiling/ribopy). RiboFlow is part of a [software ecosystem](https://ribosomeprofiling.github.io/) for ribosome profiling data.
 
+![Overview](docs/figures/ecosystem_overview.jpg "Ribo Ecosystem Overview")
 
-![Overview](/docs/figures/ecosystem_overview.jpg "Ribo Ecosystem Overview")
+## What it does
+
+For each sample the pipeline trims adapters, removes rRNA/tRNA reads, aligns the rest, removes duplicates and writes alignment statistics. It has three parts, and you can turn each one on or off in the params file:
+
+| Part | Turned on by | Produces |
+|---|---|---|
+| Genome alignment (STAR) | `genome.run: true` (default) | BAM and BED files, `stats.csv` |
+| Transcriptome alignment (bowtie2) | `transcriptome.run: true` | one `.ribo` file per sample and a merged `all.ribo` |
+| RNA-seq | `do_rnaseq: true` | the same for matching RNA-seq samples, added into the `.ribo` files |
 
 ## Contents
 
-* [Installation](#installation) 
-* [Test Run](#test-run)  
-* [Output](#output)  
-* [RiboFlow on Your Data](#riboflow-on-your-data)
-* [UMIs](#working-with-unique-molecular-identifiers)  
-* [A Note on References](#a-note-on-references)  
-* [Advanced Features](#advanced-features)  
-* [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
-* [Release Notes](https://github.com/ribosomeprofiling/riboflow/blob/master/CHANGELOG.md)  
+- [Quickstart](#quickstart)
+- [Where to run it](#where-to-run-it)
+- [Running on your data](#running-on-your-data)
+- [Output](#output)
+- [STAR genome index](#star-genome-index)
+- [Deduplication](#deduplication)
+- [Transcriptome path and .ribo files](#transcriptome-path-and-ribo-files)
+- [Optional features](#optional-features)
+- [Citing](#citing)
+- [FAQ](FAQ.md) and [Changelog](CHANGELOG.md)
 
-## Installation
+## Quickstart
 
-### Requirements
+These steps are for Linux (x86-64). On other systems use the Docker image (see [Where to run it](#where-to-run-it)).
 
-* [Nextflow](https://www.nextflow.io/)
-* [Docker](https://docs.docker.com/install/) (Optional)
-* [Conda](https://conda.io/en/latest/miniconda.html) (Optional)
+**1. Install Miniconda** if you do not have `conda`: <https://docs.conda.io/en/latest/miniconda.html>. Open a new terminal afterwards.
 
-First, follow the instructions in [Nextflow website](https://www.nextflow.io/) and install Nextflow.
+**2. Download the pipeline.**
 
-### Docker Option
-
-Install [Docker](https://docs.docker.com/install/).
-Here is a [tutorial for Ubuntu.](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)
-
-All remaining dependencies come in the Docker image [hakanozadam/riboflow](https://hub.docker.com/r/hakanozadam/riboflow).
-This image is automatically pulled by RiboFlow when run with Docker (see test runs below).
-
-### Conda Option
-
-This option has been tested on Linux systems only.
-
-Install  [Conda](https://conda.io/en/latest/miniconda.html).
-
-All other dependencies can be installed using the environment file,
-environment.yaml, in this repository.
-```
-git clone https://github.com/ribosomeprofiling/riboflow.git
-conda env create -f riboflow/environment.yaml
-```
-
-The above command will create a conda environment called _ribo_
-and install dependencies in it.
-To start using RiboFlow, you need to activate the _ribo_ environment.
-
-`conda activate ribo`
-
-## Test Run
-
-For fresh installations, before running RiboFlow on actual data,
-it is recommended to do a test run.
-
-
-### Run Using Docker
-
-```
-# Clone this repository in a new folder and change your working directory to the RiboFlow folder.
-mkdir rf_test_run && cd rf_test_run
+```bash
 git clone https://github.com/ribosomeprofiling/riboflow.git
 cd riboflow
+```
 
-# Obtain a copy of the sample data in the working directory.
+**3. Create the environment.** This installs Nextflow and every tool the pipeline uses.
+
+```bash
+conda env create -f environment.yaml
+conda activate riboflow
+```
+
+**4. Get the references and example data.** Run this inside `riboflow/`. The first repository holds the rRNA filter, transcriptome and annotation references. The second holds example FASTQs and a small prebuilt STAR genome index.
+
+```bash
+git clone https://github.com/ribosomeprofiling/references_for_riboflow.git
 git clone https://github.com/ribosomeprofiling/rf_sample_data.git
-nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local
 ```
 
-Note that we provided the argument `-profile docker_local` to Nextflow to indicate that RiboFlow will be run via Docker containers. In other words, the steps of RiboFlow will be executed inside Docker containers by Nextflow. 
-Hence, no locally installed software (other than Java and Nextflow) is needed by RiboFlow.  
+**5. Run an example.**
 
-
-### Run Using Conda Environment
-
-In Conda option, the steps of RiboFlow are run locally. So, we need to install the dependencies first. This can easily be done via conda. The default profile directs RiboFlow to run locally, so we can simply skip the `-profile` argument. Also note that the conda environment has to be activated before running RiboFlow. 
-
-Before running the commands below, make sure that you have created the conda environment, called _ribo_,
-using the instructions above. 
-
+```bash
+nextflow run main.nf -profile default -params-file examples/example_position_multi.yaml
 ```
-# List the environments to make sure that ribo environment exists
-conda env list
 
-# Activate the ribo environment
-conda activate ribo
+**6. Look at the results** under `position_output/`:
 
-# Get RiboFlow repository
-mkdir rf_test_run && cd rf_test_run
-git clone https://github.com/ribosomeprofiling/riboflow.git
-cd riboflow
+- `stats/genome/stats.csv`: alignment summary, one column per sample
+- `alignments/`: deduplicated BAM and BED files
+- `ribo/all.ribo`: the merged `.ribo` file
 
-# Obtain a copy of the sample data in the working directory.
-git clone https://github.com/ribosomeprofiling/rf_sample_data.git
+The other four example files run the same way. See [Running on your data](#running-on-your-data).
 
-# Finally run RiboFlow
-nextflow RiboFlow.groovy -params-file project.yaml
+## Where to run it
 
+`-profile` takes two parts: where the tools come from, and how big the machine is.
+
+| Tools | Flag | Notes |
+|---|---|---|
+| Your active conda env | *(nothing)* | As in the Quickstart. Tools must be on `PATH`. |
+| Conda managed by Nextflow | `conda` | Nextflow builds the env from `environment.yaml`. |
+| Docker | `docker` | Uses `danielnguyener/riboflow:2.0.0`. Works on macOS and Windows. |
+| Apptainer / Singularity | `apptainer` | Same image. For HPC clusters. |
+
+| Machine | Flag | Sized for |
+|---|---|---|
+| Workstation | `default` | 16 cores, 64 GB RAM. Used when you give no machine flag. |
+| TACC Lonestar6 | `lonestar6` | One full node, 128 cores, 256 GB RAM. |
+
+Combine them with a comma:
+
+```bash
+nextflow run main.nf -profile docker,default   -params-file my_run.yaml   # local machine, Docker
+nextflow run main.nf -profile conda,lonestar6  -params-file my_run.yaml   # HPC node, conda
 ```
+
+To fit another machine, copy `conf/default.config`, change the CPU and memory values, and pass it with `-c my_machine.config`.
+
+**On an HPC cluster with Apptainer**, pull the image once, then start the pipeline from inside it:
+
+```bash
+apptainer pull docker://danielnguyener/riboflow:2.0.0      # once
+apptainer shell riboflow_2.0.0.sif
+nextflow run /path/to/riboflow/main.nf -profile lonestar6 -params-file my_run.yaml
+```
+
+## Running on your data
+
+Start from the example file closest to your experiment and edit it.
+
+| Example | Duplicate removal | Covers |
+|---|---|---|
+| `examples/example_position_multi.yaml` | by position | Genome, transcriptome and RNA-seq. Several lanes per sample. |
+| `examples/example_umi_uniq.yaml` | by UMI | Same, for libraries with UMIs. |
+| `examples/example_transcriptome_only.yaml` | by UMI | Transcriptome only, no STAR genome alignment. |
+| `examples/example_build_index.yaml` | by UMI | Builds the STAR index from a FASTA and GTF instead of using a prebuilt one. |
+| `examples/example_rnaseq_pe.yaml` | none | Paired-end RNA-seq. Also keeps multi-mapping reads. |
+
+The shipped STAR index is a small example reference. For real data point `input.reference.genome` at an index for your genome (see [STAR genome index](#star-genome-index)).
+
+Edit these parts of the file:
+
+1. **References**, under `input.reference`:
+   - `filter`: the bowtie2 rRNA index prefix. `references_for_riboflow` includes human and mouse.
+   - `genome`: a STAR index directory. Or give `genome_fasta` and `gtf` to have the pipeline build one.
+   - `transcriptome`, `regions`, `transcript_lengths`: needed only when `transcriptome.run: true`.
+2. **FASTQ files**, under `input.fastq`: one list of files per sample. Each file is one lane; lanes are merged after alignment.
+3. **Adapter trimming**, `clip_arguments`: cutadapt options, including your adapter sequence.
+4. **Duplicate removal**, `dedup_method`: `umicollapse`, `position` or `none`. See [Deduplication](#deduplication).
+5. **Output folders**, `output.output.base` and `output.intermediates.base`.
+
+Run it:
+
+```bash
+nextflow run main.nf -profile default -params-file my_run.yaml
+```
+
+Add `-resume` to rerun after changing a setting; finished steps are reused.
+
+Settings that belong to a group, such as `genome.run`, go in the params file. Do not pass them on the command line as `--genome.run false`: Nextflow replaces the whole `genome` group with just that one key.
+
+### Which reads are kept
+
+After alignment each read goes through a quality filter. The defaults suit most ribosome profiling experiments and you normally do not need to change them:
+
+```yaml
+genome:
+  unique_only: true                      # keep reads that map to exactly one place
+  samtools_filter_arguments: "-F 2308"   # drop unmapped, secondary and supplementary records
+transcriptome:
+  mapping_quality_cutoff: 10             # bowtie2 confidence score; 40 or more means unique
+  samtools_filter_arguments: "-F 2308"
+```
+
+`samtools_filter_arguments` accepts any `samtools view` option that selects reads (`-f`, `-F`, `-e`, `-L`, ...). Mistakes are reported before the run starts. Keeping multi-mapping reads is described under [Optional features](#keeping-multi-mapping-reads).
 
 ## Output
 
-Pipeline run may take several minutes.
-When finished, the resulting files are in the `./output` folder.
-
-Mapping statistics are compiled in a csv file called `stats.csv`
+Paths below use `<out>` and `<inter>` for the two folders set in the params file. RNA-seq results are under `<out>/rnaseq/`. Folders marked optional appear only when the matching setting is on.
 
 ```
-ls output/stats/stats.csv
+<out>/
+├── alignments/ribo/
+│   ├── individual/                      # per lane
+│   │   ├── <sample>.<lane>.genome.post_dedup.bed
+│   │   └── <sample>.<lane>.post_dedup.bam (+ .bai)     # umicollapse only
+│   ├── merged/                          # per sample
+│   │   ├── <sample>.dedup.bam (+ .bai)  # <sample>.post_dedup.bam with position dedup
+│   │   └── <sample>.genome.post_dedup.bed
+│   └── stranded/                        # optional: do_strand_split
+├── bigwigs/ribo/                        # optional: do_bigwig
+├── fastqc/                              # optional: do_fastqc
+├── ribo/                                # transcriptome.run
+│   ├── <sample>.ribo
+│   └── all.ribo
+├── rnaseq/                              # do_rnaseq: same layout for RNA-seq
+└── stats/
+    ├── genome/stats.csv                 # one column per sample
+    ├── genome/individual_stats.csv      # one column per lane
+    ├── transcriptome/...                # transcriptome.run
+    └── index_fastq_correspondence.txt   # which FASTQ became which sample.lane
 ```
 
-Ribosome occupancy data is in a single
-[ribo file](https://ribopy.readthedocs.io/en/latest/ribo_file_format.html) called `all.ribo`.
+`stats.csv` reports read counts at each step: total, after trimming, after the rRNA filter, aligned once, aligned to several places, unaligned, after the quality filter and after duplicate removal.
 
-`ls output/ribo/all.ribo`
+`<inter>/` holds everything in between: trimmed FASTQs, rRNA filter BAMs, STAR and bowtie2 BAMs and logs, quality-filtered BAMs and BEDs. They are kept so you can look at the reads at any step. The folder can be deleted; a rerun recreates what it needs.
 
-You can use
-[RiboR](https://github.com/ribosomeprofiling/ribor) or
-[RiboPy](https://github.com/ribosomeprofiling/ribopy) to work with ribo files.
+Lane numbers come from the order of the files in the params file. If you reorder or add FASTQs for a sample, delete that sample's intermediates first, otherwise files from the old order are reused.
 
+## STAR genome index
 
-## RiboFlow on Your Data
+Give either a prebuilt index or the files to build one, not both.
 
-For running RiboFlow on actual data, files must be organized and a parameters file must be prepared.
-You can examine the sample run above to see an example.
+**Prebuilt index:**
 
-1. Organize your data. The following files are required for RiboFlow
-   * **Ribosome profiling sequencing data:** in gzipped fastq files
-   * **Transcriptome Reference:** Bowtie2 index files
-   * **Filter Reference:** Bowtie2 index files (typically for rRNA sequences)
-   * **Annotation:** A bed file defining CDS, UTR5 and UTR3 regions.
-   * **Transcript Lengths:** A two column tsv file containing transcript lengths
-
-2. Prepare a custom `project.yaml` file.
-You can use the sample file `project.yaml`, provided in this repository,
-as template.
-
-3. In `project.yaml`, provide RiboFlow parameters such as `clip_arguments`, alignment arguments etc.
-You can simply modify the arguments in the sample file `project.yaml` in this repository.
-
-4. You can adjust the hardware and computing environment settings in Nextflow configuration file(s).
-For Docker option, see `configs/docker_local.config`. If you are not using Docker,
-see `configs/local.config`.
-
-5. RNA-Seq data is optional for RiboFlow. So, if you do NOT have RNA-Seq data, in the project file, set
-
-`do_rnaseq: false`
-
-If you have RNA-Seq data to be paired with ribosome profiling data, see the [Advanced Features](#advanced-features) below.
-
-
-6. Metadata is optional for RiboFlow. If you do NOT have metadata, in the project file, set
-
-`do_metadata: false`
-
-If you have metadata, see [Advanced Features](#advanced-features) below.
-
-7. Run RiboFlow using the new parameters file `project.yaml`.
-
-Using Docker:
-
-`nextflow RiboFlow.groovy -params-file project.yaml -profile docker_local`
-
-Without Docker:
-
-`nextflow RiboFlow.groovy -params-file project.yaml`
-
-## Working with Unique Molecular Identifiers
-Unique Molecular Identifiers (UMIs) can be ligated to either side of the molecules and 
-they allow labeling molecules uniqely. This way UMIs can be used to deduplicate mapped reads
-for more accurate quantification.
-
-If there are UMIs in your ribosome profiling data, Riboflow can trim them and deduplicate reads based on UMIs. 
-
-RiboFlow extracts UMIs and stores them in the Fastq headers and uses the UMIs in deduplication 
-(instead of position based read collapsing). For this purpose RiboFlow uses 
-[umi_tools](https://github.com/CGATOxford/UMI-tools).
-
-
-### Project File
-
-Here we explain the related parts of the project file to be able to use UMIs feature of Riboflow.
-
-Also, we provide a working example of project file in this repository: *project_umi.yaml*.
-
-The following parameter must be set:
-```
-dedup_method: "umi_tools"
+```yaml
+input:
+  reference:
+    genome: /path/to/STAR_index     # folder with SA, SAindex, Genome, chrNameLength.txt
 ```
 
-Also, users must set the following two parameters: `umi_tools_extract_arguments` and `umi_tools_dedup_arguments`.
+Build it with the STAR version in `environment.yaml`:
 
-For example: 
+```bash
+STAR --runMode genomeGenerate --runThreadN 16 \
+  --genomeDir /path/to/STAR_index \
+  --genomeFastaFiles genome.fa --sjdbGTFfile annotation.gtf \
+  --sjdbOverhang 28
 ```
+
+**Built by the pipeline:**
+
+```yaml
+input:
+  reference:
+    genome_fasta: /path/to/genome.fa
+    gtf:          /path/to/annotation.gtf
+star:
+  sjdb_overhang: 28            # longest read length minus 1
+  index_dir: /path/to/cache    # the built index is saved here and reused by later runs
+```
+
+Use `sjdb_overhang: 28` for ribosome profiling (footprints are about 26 to 34 nt after trimming). The default, 100, suits full-length RNA-seq reads. `examples/example_build_index.yaml` shows this mode.
+
+## Deduplication
+
+| `dedup_method` | What it does |
+|---|---|
+| `umicollapse` | Uses UMIs. Needs `umi_tools_extract_arguments` to say where the UMI sits in the read. |
+| `position` | Treats reads with the same position, length and strand as duplicates. For libraries without UMIs. |
+| `none` | No duplicate removal. |
+
+```yaml
+dedup_method: "umicollapse"
+# 12 nt UMI at the 5' end followed by 4 nt to discard
 umi_tools_extract_arguments: "-p \"^(?P<umi_1>.{12})(?P<discard_1>.{4}).+$\" --extract-method=regex"
-umi_tools_dedup_arguments:   "--read-length"
 ```
 
-The above example takes the first 12 nucleotides from the 5' end, discards the 4 nucleotides downstream and writes the 12 nt UMI sequence to the header.
-The second parameter tells umi_tools to use read lengths IN ADDITION to UMI sequencing in collapsing reads. Note that these two arguments are directly provided to umi_tools. So users are encouraged to familirize themselves with [umi_tools](https://umi-tools.readthedocs.io/en/latest/).
+RNA-seq has its own setting, `rnaseq.dedup_method`, with the same choices.
 
-### Test Run with UMIs
+## Transcriptome path and .ribo files
 
-We provide a mini dataset, with two samples, to try Riboflow with sequencing reads having UMIs.
-In this sample dataset, the first 12 nucleotides on the 5' end of the reads are UMIs.
-Four nucleotides following the UMIs need to be discarded.
-On the 3' end of the reads, there are adapters having the sequence `AAAAAAAAAACAAAAAAAAAA`.
-The parameters of this sample run are provided in the file *project_umi.yaml*.
-Below are the steps to process this data.
+With `transcriptome.run: true` reads are aligned to the transcriptome with bowtie2, filtered and deduplicated, and `ribopy create` writes one `.ribo` file per sample. `ribopy merge` combines them into `all.ribo`. This needs the `transcriptome`, `regions` and `transcript_lengths` references and the `ribo` settings (`ref_name`, `metagene_radius`, `left_span`, `right_span`, `read_length`).
 
+Only transcriptome alignments go into `.ribo` files. Genome alignment results stay as BAM, BED and `stats.csv` files.
 
+## Optional features
+
+Everything here is off by default.
+
+### RNA-seq
+
+Set `do_rnaseq: true` and list FASTQs under `rnaseq.fastq` using the same sample names as the ribo-seq data. RNA-seq is trimmed, filtered, aligned and deduplicated on its own, with results under `<out>/rnaseq/`. When `transcriptome.run` is on, the RNA-seq counts are added to each sample's `.ribo` file.
+
+### Paired-end RNA-seq
+
+Give a lane as a pair of files, `[R1, R2]`. Paired-end works for the genome alignment with `rnaseq.dedup_method` `none` or `umicollapse`; `position` and the transcriptome path do not support paired-end and stop the run with a message. Counts in `stats.csv` are per fragment, not per mate.
+
+For paired-end data add `-f 2` to `rnaseq.genome.samtools_filter_arguments` to keep only properly paired reads. Do not use `-f 2` for single-end data; it would remove every read.
+
+A pair is removed by the rRNA filter only when both mates align to it together. See `examples/example_rnaseq_pe.yaml`.
+
+### Keeping multi-mapping reads
+
+By default only reads that align to exactly one place are kept (`unique_only: true`). To keep multi-mapping reads:
+
+```yaml
+genome:
+  unique_only: false
+  mapping_quality_cutoff: 0              # minimum MAPQ; 0 keeps everything
+  samtools_filter_arguments: "-F 2052"   # keep secondary alignments too
 ```
-# List the environments to make sure that ribo environment exists
-conda env list
 
-# Activate the ribo environment
-conda activate ribo
+`stats.csv` then adds rows splitting the kept reads into unique, multi-mapping and secondary alignments. How those rows are counted can be changed with `samtools_count_arguments`; the defaults are commented in the example files and are right for STAR.
 
-# Get RiboFlow repository
-mkdir rf_test_run && cd rf_test_run
-git clone https://github.com/ribosomeprofiling/riboflow.git
-cd riboflow
+`rnaseq.genome` has the same settings for RNA-seq.
 
-# Obtain a copy of the sample data in the working directory.
-git clone https://github.com/ribosomeprofiling/rf_sample_data.git
+### Metadata in .ribo files
 
-# Finally run RiboFlow
-nextflow RiboFlow.groovy -params-file project_umi.yaml
-
-# At the end of the run
-# checkk the ribo file
-ribopy info output_umi/ribo/all.ribo
+```yaml
+ribo:
+  ribometa: ./my_run.yaml          # one file describing the whole experiment
+  metadata:
+    base: ./meta
+    files:
+      GSM1606107: GSM1606107.yaml  # one file per sample; names must match input.fastq
 ```
 
- ### UMI support for RNA-Seq
- 
- In the current version, UMIs are supported for ribosome profiling data only. So RNA-Seq libraries can either be used without deduplication or the reads can be collapsed based on position.
+Examples are in `meta/`. Check what was stored with `ribopy meta info <out>/ribo/<sample>.ribo`.
 
-## A Note on References
+### Other settings
 
-RiboFlow is designed to work with transcriptomic references. RiboFlow does **NOT** work with genomic references.
-The users need to provide a transcriptome reference and annotation to run this software.
-There is a curated set of RiboFlow references, that users can download and use, in
-[this GitHub repository](https://github.com/ribosomeprofiling/references_for_riboflow)
-
-## Advanced Features
-
-### RNA-Seq Data
-
-If you have RNA-Seq data that you want to pair with ribosome profiling experiments,
-provide the paths of the RNA-Seq (gzipped) fastq files  in the configuration file in
-_input -> metadata_. See the file `project.yaml` in this repository for an example.
-Note that the names in defining RNA-Seq files must match the names in definig ribosome profiling data.
-Also turn set the do_rnaseq flag to true, in the project file:
-
-`do_rnaseq: true`
-
-Transcript abundance data will be stored in the output ribo file.
-
-### Metadata
-
-If you have metadata files for the ribosome profiling experiments,
-provide the paths of the metadata files (in yaml format) in the configuration file in
-_input -> metadata_. See the file `project.yaml` in this repository for an example.
-Note that the names in defining metadata files must match the names in definig ribosome profiling data.
-Also turn set the metadata flag to true, in the project file:
-
-`do_metadata: true`
-
-Metadata will be stored in the output ribo file.
+| Setting | Effect |
+|---|---|
+| `do_strand_split` | Splits each final ribo-seq BAM into plus and minus strand BAM and BED files. |
+| `do_bigwig` | Writes strand-specific bigWig coverage tracks. Slow. |
+| `do_fastqc` | Runs FastQC on the raw, trimmed, aligned and unaligned reads. |
+| `do_check_file_existence` | Checks that every input path exists before starting. On in all examples. |
+| `star.output_transcriptome_bam` | STAR also writes a BAM in transcriptome coordinates, deduplicated into `<inter>/star_transcriptome/`, for tools such as Salmon. |
 
 ## Citing
 
-[RiboFlow, RiboR and RiboPy: an ecosystem for analyzing ribosome profiling data at read length resolution, H. Ozadam, M. Geng, C. Cenik
-Bioinformatics 36 (9), 2929-2931](https://academic.oup.com/bioinformatics/article/36/9/2929/5701654)
+[RiboFlow, RiboR and RiboPy: an ecosystem for analyzing ribosome profiling data at read
+length resolution, H. Ozadam, M. Geng, C. Cenik, *Bioinformatics* 36 (9),
+2929-2931](https://academic.oup.com/bioinformatics/article/36/9/2929/5701654)
 
 ```bibtex
 @article{ozadam2020riboflow,
@@ -299,7 +318,4 @@ Bioinformatics 36 (9), 2929-2931](https://academic.oup.com/bioinformatics/articl
 }
 ```
 
-## [Frequently Asked Questions](https://github.com/ribosomeprofiling/riboflow/blob/master/FAQ.md)  
-
-  
-## [Release Notes](https://github.com/ribosomeprofiling/riboflow/blob/master/CHANGELOG.md)  
+## [FAQ](FAQ.md) and [Changelog](CHANGELOG.md)

@@ -1,0 +1,41 @@
+// Real (non-stub) unit test for TX_STATS_INDIVIDUAL against real cutadapt / bowtie2
+// logs in tests/fixtures/stats. Needs python3 + rfc on PATH. Guards:
+//   transcriptome_aligned_once + _many + _unaligned == filter_kept
+nextflow_process {
+
+    name "TX_STATS_INDIVIDUAL"
+    script "modules/local/tx_stats_individual.nf"
+    process "TX_STATS_INDIVIDUAL"
+
+    test("transcriptome stats rows are consistent and label-parsed") {
+        when {
+            process {
+                """
+                def fx = "\${projectDir}/tests/fixtures/stats/GSM8325903.1"
+                input[0] = [ [id: 'GSM8325903', lane: '1'],
+                             file("\${fx}.transcriptome_alignment.log"),
+                             file("\${fx}.clipped.log"),
+                             file("\${fx}.filter.log"),
+                             file("\${fx}.transcriptome_alignment.qpass.total.count"),
+                             file("\${fx}.tx.dedup.total.count") ]
+                """
+            }
+        }
+        then {
+            assert process.success
+            def csv  = new File(process.out.csv.get(0).get(1))
+            def rows = csv.readLines().drop(1).collectEntries { def p = it.split(','); [(p[0]): p[1] as long] }
+
+            assert rows.filter_kept                == 41669
+            assert rows.transcriptome_aligned_once == 1203
+            assert rows.transcriptome_aligned_many == 5
+            assert rows.transcriptome_unaligned    == 40461
+            assert rows.transcriptome_total_aligned == 1208
+
+            assert rows.transcriptome_aligned_once + rows.transcriptome_aligned_many + rows.transcriptome_unaligned == rows.filter_kept
+            assert rows.transcriptome_total_aligned == rows.filter_kept - rows.transcriptome_unaligned
+            assert rows.transcriptome_qpass_aligned_reads == 1111
+            assert rows.transcriptome_after_dedup         == 1026
+        }
+    }
+}

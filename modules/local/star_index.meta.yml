@@ -1,0 +1,8 @@
+name: STAR_INDEX
+description: Build a STAR genome index (genomeGenerate mode) from a FASTA + GTF. Output directory is used directly as input to STAR_ALIGN.
+keywords: [star, index, genomeGenerate]
+input:
+  - fasta: { type: file, description: Genome FASTA (e.g. GRCh38.primary_assembly.genome.fa) }
+  - gtf:   { type: file, description: Gene annotation GTF (e.g. gencode.v48.annotation.gtf) }
+output:
+  - index: { type: directory, description: "star_index/ — STAR genome index directory" }

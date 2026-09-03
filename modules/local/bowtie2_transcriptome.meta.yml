@@ -1,0 +1,11 @@
+name: BOWTIE2_TRANSCRIPTOME
+description: Ribo-seq transcriptome alignment with bowtie2 against the transcriptome index; feeds the ribopy create (.ribo) path.
+keywords: [bowtie2, transcriptome, ribo]
+input:
+  - meta: { type: map }
+  - fastq: { type: file, description: "filtered ribo-seq reads (SE)" }
+  - index_base: { type: string }
+  - index_files: { type: file, description: "bowtie2 transcriptome index" }
+output:
+  - bam: { description: "[meta, *.transcriptome_alignment.bam]" }
+  - log: { description: "[meta, *.transcriptome_alignment.log]" }

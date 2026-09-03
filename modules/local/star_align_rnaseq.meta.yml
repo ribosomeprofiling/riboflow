@@ -1,0 +1,13 @@
+name: STAR_ALIGN_RNASEQ
+description: RNA-seq genome alignment with STAR (ENCODE-style defaults; SE or PE); emits genome BAM, aligned/unaligned FASTQs, log, and a secondary-alignment count.
+keywords: [star, alignment, genome, rnaseq]
+input:
+  - meta: { type: map }
+  - reads: { type: file, description: "filtered RNA-seq reads (R1[, R2])" }
+  - genome_dir: { type: directory, description: "STAR genome index directory" }
+output:
+  - bam: { description: "[meta, *.rnaseq.genome_alignment.bam]" }
+  - aligned: { description: "[meta, *.rnaseq.genome_alignment.aligned.fastq.gz]" }
+  - unaligned: { description: "[meta, *.rnaseq.genome_alignment.unaligned.fastq.gz]" }
+  - log: { description: "[meta, *.rnaseq.genome_alignment.log]" }
+  - secondary_count: { description: "[meta, *.rnaseq.genome_alignment.secondary.count]" }
