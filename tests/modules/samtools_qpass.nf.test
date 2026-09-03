@@ -1,0 +1,52 @@
+// Module unit test: SAMTOOLS_QPASS emits the qpass BAM, index, and count files.
+// Runs in stub mode (no samtools needed). The extra primary/secondary/unique count
+// passes exist only in multi-mapper mode (genome.unique_only: false); in the
+// default unique-only mode every kept record is a unique primary, so the stats
+// stage uses the total as a proxy and the passes are skipped.
+nextflow_process {
+
+    name "SAMTOOLS_QPASS"
+    script "modules/local/samtools_qpass.nf"
+    process "SAMTOOLS_QPASS"
+
+    test("unique-only mode: total count only (stub)") {
+        options "-stub-run"
+        when {
+            process {
+                """
+                input[0] = [ [id: 'S1', lane: 'l1', strand: 'F'],
+                             file("\${projectDir}/tests/stub/fastq/S1.l1.fastq.gz") ]
+                """
+            }
+        }
+        then {
+            assert process.success
+            assert process.out.bam.get(0).get(1).endsWith('.qpass.bam')
+            assert process.out.bam.get(0).get(2).endsWith('.qpass.bam.bai')
+            assert process.out.total_count.size() == 1
+            assert process.out.primary_count.size() == 0
+            assert process.out.secondary_count.size() == 0
+            assert process.out.unique_count.size() == 0
+        }
+    }
+
+    test("multi-mapper mode: total/primary/secondary/unique counts (stub)") {
+        options "-stub-run"
+        config "tests/modules/multimap.config"
+        when {
+            process {
+                """
+                input[0] = [ [id: 'S1', lane: 'l1', strand: 'F'],
+                             file("\${projectDir}/tests/stub/fastq/S1.l1.fastq.gz") ]
+                """
+            }
+        }
+        then {
+            assert process.success
+            assert process.out.total_count.size() == 1
+            assert process.out.primary_count.size() == 1
+            assert process.out.secondary_count.size() == 1
+            assert process.out.unique_count.size() == 1
+        }
+    }
+}

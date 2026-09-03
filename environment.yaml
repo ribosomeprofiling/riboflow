@@ -1,28 +1,30 @@
-name: ribo
+name: riboflow
 channels:
-    - conda-forge               
-    - defaults                  
-    - bioconda      
-    - cyclus
+  - conda-forge
+  - bioconda
 dependencies:
-    - python=3.7
-    - nextflow=19.04.1
-    - openjdk=8
-    - samtools>=1.4
-    - sra-tools>=2.8.1
-    - fastqc=0.11.8
-    - setuptools 
-    - pip
-    - numpy=1.19.5
-    - pandas=1.1.5
-    - matplotlib=3.3.4
-    - bowtie2=2.3.4.3
-    - hisat2=2.2.0=py37hfa133b6_4
-    - pysam=0.16.0.1
-    - bedtools=2.27.1
-    - cutadapt=1.18
-    - pip:
-      - scipy==1.5.4
-      - umi_tools==1.1.1
-      - git+https://github.com/ribosomeprofiling/ribopy.git
-      - git+https://github.com/ribosomeprofiling/rfcommands.git 
+  - nextflow=26.04.2
+  - openjdk=23.0.2
+  - umicollapse=1.1.0
+  - python=3.12.13
+  - samtools=1.23
+  - pigz=2.8
+  - fastqc=0.12.1
+  - setuptools=82.0.1
+  - pip=26.1.1
+  - numpy=1.26.4
+  - pandas=3.0.3
+  - scipy=1.17.1
+  - matplotlib=3.10.9
+  - bowtie2=2.5.5
+  - star=2.7.11b
+  - bx-python=0.14.0
+  - pysam=0.24.0
+  - bedtools=2.31.1
+  - cutadapt=5.2
+  - deeptools=3.5.5
+  - ucsc-bedgraphtobigwig=482
+  - umi_tools=1.1.6
+  - pip:
+    - git+https://github.com/ribosomeprofiling/ribopy.git@380421e202f25a9829b36c1c1d5a8bf333d9188f
+    - git+https://github.com/ribosomeprofiling/RFCommands.git@a8ba526bcaebacf035dd1412915708d44065f1d9

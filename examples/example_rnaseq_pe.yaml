@@ -1,0 +1,93 @@
+# Paired-end RNA-seq on the genome path, umicollapse dedup.
+#
+# A paired-end lane is a 2-element [R1, R2] list under rnaseq.fastq; a
+# single-end lane is a plain string.
+#
+# Two constraints of the paired-end path:
+#   1. Genome only. Paired-end through the transcriptome path is rejected at
+#      startup, so transcriptome.run must be false.
+#   2. rnaseq.dedup_method: position is rejected for paired-end. Use
+#      umicollapse or none.
+#
+# Run:
+#   nextflow run main.nf -profile default -params-file examples/example_rnaseq_pe.yaml
+
+do_check_file_existence: true
+do_fastqc:               false
+do_rnaseq:               true
+do_strand_split:         false
+do_bigwig:               false
+
+# ── Ribo-seq ──────────────────────────────────────────────────────────────────
+# The pipeline has no RNA-seq-only mode, so a ribo-seq input is required.
+dedup_method:                none
+umi_tools_extract_arguments: ""
+umicollapse_arguments:       ""
+clip_arguments: '-u 1 -a CTGTAGGCACCATCAAT --overlap=4 --trimmed-only --maximum-length=40 --minimum-length=15 --quality-cutoff=28'
+
+genome:
+  run:                    true
+  unique_only: false          # keep multi-mappers; stats add a unique/multi breakdown
+  mapping_quality_cutoff: 0   # -q, used only when unique_only: false
+  samtools_filter_arguments: "-F 2052"   # drop unmapped + supplementary, keep secondary
+  # samtools view read-filtering args. -q is not accepted here; unique_only and
+  # mapping_quality_cutoff control the MAPQ filter.
+  samtools_count_arguments:          # how stats.csv counts kept reads; does not change the BAM
+    primary:   "-F 2304"             #   one record per aligned read
+    secondary: "-f 256"              #   extra alignments of multi-mappers
+    unique:    "-q 255 -F 2304"      #   used only when unique_only: false
+
+transcriptome:
+  run: false                                 # paired-end is genome only
+  mapping_quality_cutoff: 10
+  samtools_filter_arguments: "-F 2308"
+
+input:
+  reference:
+    genome: ./rf_sample_data/genome/star_index
+    filter: ./references_for_riboflow/filter/human/v2/human_rtRNA*
+  fastq_base: ""
+  fastq:
+    GSM1606107:
+      - ./rf_sample_data/fastq/ribosome_profiling/GSM1606107/SRR1795425.fastq.gz
+
+# ── RNA-seq ───────────────────────────────────────────────────────────────────
+rnaseq:
+  fastq_base:                  ""
+  clip_arguments:              '-u 5 -l 40 --quality-cutoff=28 --minimum-length=20'
+  filter_arguments:            '-L 15 --no-unal'
+  dedup_method:                umicollapse   # paired-end supports umicollapse or none
+  # This library has no UMIs. The first 6 bp of R1 are declared as one only so
+  # the paired-end dedup branch runs. The duplicate counts are not meaningful.
+  # Replace with your real UMI layout.
+  umi_tools_extract_arguments: '--extract-method=string --bc-pattern=NNNNNN'
+  genome:
+    unique_only: false              # keep multi-mappers
+    mapping_quality_cutoff: 0       # -q, used only when unique_only: false
+    # -f 2 keeps properly-paired records only, so it suits paired-end lanes and
+    # would drop every single-end read. -F 2052 drops unmapped + supplementary.
+    samtools_filter_arguments: "-f 2 -F 2052"
+    samtools_count_arguments:
+      primary:   "-F 2304"
+      secondary: "-f 256"
+      unique:    "-q 255 -F 2304"    # used only when unique_only: false
+      paired_end_fragment:  "-f 64"  # count R1 only, so counts are per fragment
+      paired_end_secondary: "-f 320"
+  transcriptome:
+    mapping_quality_cutoff:  10
+    samtools_filter_arguments: "-F 2308"
+    alignment_arguments:    '-L 15 --no-unal'
+  fastq:
+    # A paired-end lane is a 2-element [R1, R2] list. Add more lanes as more
+    # list entries; they are merged per sample after alignment.
+    SRR1039508:
+      - ['./rf_sample_data/fastq/rnaseq_pe/SRR1039508/SRR1039508_all_1.fastq.gz',
+         './rf_sample_data/fastq/rnaseq_pe/SRR1039508/SRR1039508_all_2.fastq.gz']
+
+output:
+  individual_lane_directory: individual
+  merged_lane_directory:     merged
+  intermediates:
+    base: ./rnaseq_pe_intermediates
+  output:
+    base: ./rnaseq_pe_output

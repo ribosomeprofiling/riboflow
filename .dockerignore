@@ -1,0 +1,29 @@
+# Files that should never be copied into the Docker build context.
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Pipeline state and outputs
+.nextflow*
+work/
+nextflow_logs/
+output/
+intermediates/
+
+# Docs and tests (built image stays slim)
+docs/
+tests/
+*.md
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/

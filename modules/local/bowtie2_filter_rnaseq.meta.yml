@@ -1,0 +1,13 @@
+name: BOWTIE2_FILTER_RNASEQ
+description: RNA-seq rRNA/tRNA contaminant filter with bowtie2 (SE or PE); emits the unaligned reads kept for genome/transcriptome alignment.
+keywords: [bowtie2, filter, rrna, rnaseq]
+input:
+  - meta: { type: map }
+  - reads: { type: file, description: "clipped RNA-seq reads (R1[, R2])" }
+  - index_base: { type: string }
+  - index_files: { type: file, description: "bowtie2 filter index" }
+output:
+  - bam: { description: "[meta, *.rnaseq.filter.bam]" }
+  - unaligned: { description: "[meta, *.rnaseq.unaligned_R1.fastq.gz]" }
+  - unaligned2: { description: "[meta, *.rnaseq.unaligned_R2.fastq.gz] (PE only)" }
+  - log: { description: "[meta, *.rnaseq.filter.log]" }

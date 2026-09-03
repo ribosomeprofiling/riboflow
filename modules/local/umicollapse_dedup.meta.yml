@@ -1,0 +1,12 @@
+name: UMICOLLAPSE_DEDUP
+description: UMI-aware dedup via bioconda umicollapse CLI (JVM flags via _JAVA_OPTIONS). ext.emit_counts adds merged counts.
+keywords: [umicollapse, dedup, umi]
+input:
+  - meta: { type: map }
+  - bam:  { type: file, description: merged qpass BAM }
+  - bai:  { type: file }
+output:
+  - bam:    { description: "[meta, *.bam, *.bam.bai]" }
+  - counts: { description: "[meta, total, primary, secondary] (optional)" }
+ext:
+  - prefix, emit_counts, jvm_opts (default '-Xms512m -Xmx32g -Xss256m'), args

@@ -1,0 +1,9 @@
+name: RIBOPY_RNASEQ_SET
+description: Embed the matching RNA-seq transcriptome BED into a sample's .ribo via `ribopy rnaseq set`.
+keywords: [ribopy, ribo, rnaseq]
+input:
+  - meta: { type: map }
+  - ribo: { type: file, description: "per-sample ribo-seq .ribo" }
+  - rnaseq_bed: { type: file, description: "matching RNA-seq transcriptome dedup BED" }
+output:
+  - ribo: { description: "[meta, <sample>.rnaseq.ribo] (publishDir strips .rnaseq)" }
