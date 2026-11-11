@@ -103,7 +103,7 @@ ribo:
 # ── Input — references and FASTQs (ribo-seq) ──────────────────────────────────
 input:
    reference:
-      filter: ./references_for_riboflow/filter/human/v2/human_rtRNA*
+      filter: ./references_for_riboflow/filter/human/v3/human_rtRNA*
 
       # 'genome' is absent; genome_fasta + gtf trigger index generation. To use a
       # pre-built index instead, drop these two keys and set:

@@ -5,7 +5,7 @@
 //
 // `lanes` lists the sample.lane read-group ids expected. A lane with no reads
 // left after dedup still gets a header-only BAM, so downstream joins never drop
-// it.
+// it. ext.unsorted skips the per-lane index (read-name-grouped STAR projection BAM).
 //
 // The output globs start with the sample id because every sample of a route
 // shares one storeDir, and a bare *.count glob would let a sibling sample's
@@ -18,7 +18,7 @@ process SPLIT_DEDUP_BAM {
 
     output:
     tuple val(meta), path("${meta.id}.*.${task.ext.suffix ?: 'post_dedup'}.bam"),
-                     path("${meta.id}.*.${task.ext.suffix ?: 'post_dedup'}.bam.bai"), emit: bams
+                     path("${meta.id}.*.${task.ext.suffix ?: 'post_dedup'}.bam.bai", arity: '0..*'), emit: bams
     tuple val(meta), path("${meta.id}.*.${task.ext.bed_suffix ?: 'genome.post_dedup'}.bed"), optional: true, emit: beds
     tuple val(meta), path("${meta.id}.*.dedup.total.count"),                        optional: true, emit: total_counts
     tuple val(meta), path("${meta.id}.*.dedup.primary.count"), path("${meta.id}.*.dedup.secondary.count"),
@@ -32,6 +32,7 @@ process SPLIT_DEDUP_BAM {
     def emit_full_counts = (task.ext.emit_full_counts != null) ? task.ext.emit_full_counts : !Utils.route_unique_only(params, route)
     def is_pe            = meta.single_end == false
     def per_lane_threads = Math.max(1, (task.cpus as int).intdiv(Math.max(1, lanes.size())))
+    def index_cmd        = task.ext.unsorted ? '' : "samtools index -@ ${per_lane_threads} \"\$l\".${suffix}.bam"
     def counts           = emit_extra
         ? Utils.samtools_count_block(Utils.route_count_args(params, route), is_pe,
                                      "\"\$l\".${suffix}.bam", "\"\$l\".dedup", per_lane_threads,
@@ -51,7 +52,8 @@ process SPLIT_DEDUP_BAM {
     lane_pids=()
     for l in ${lanes.join(' ')}; do
         (
-        samtools index -@ ${per_lane_threads} "\$l".${suffix}.bam
+        :   # no-op so the subshell is never empty (unsorted: no index, counts or BED)
+        ${index_cmd}
         ${counts}
         ${bed_cmd}
         ) & lane_pids+=(\$!)

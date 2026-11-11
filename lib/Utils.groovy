@@ -45,10 +45,11 @@ class Utils {
         return dedup_method((params.rnaseq?.get('dedup_method', 'none') ?: 'none').toString(), 'false')
     }
 
+    // STAR transcriptome projection requested (star.output_transcriptome_bam).
+    // The projection subworkflow follows whatever dedup the genome path uses,
+    // including none, so this no longer depends on the dedup method.
     static boolean do_tx_dedup(Map params) {
-        def m = resolve_dedup_method(params)
-        return (m == 'umicollapse' || m == 'position') &&
-               as_bool((params.star ?: [:]).output_transcriptome_bam, false)
+        return as_bool((params.star ?: [:]).output_transcriptome_bam, false)
     }
 
     // ── resources ───────────────────────────────────────────────────────────

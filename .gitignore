@@ -85,3 +85,9 @@ tests/stub/multimap_output/
 
 # Real cutadapt/bowtie2/STAR logs used by tests/modules/*stats_individual.nf.test
 !tests/fixtures/stats/*.log
+tests/stub/rnatx_intermediates/
+tests/stub/rnatx_output/
+build_index_intermediates/
+build_index_output/
+transcriptome_only_intermediates/
+transcriptome_only_output/

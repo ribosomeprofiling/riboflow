@@ -27,4 +27,4 @@ dependencies:
   - umi_tools=1.1.6
   - pip:
     - git+https://github.com/ribosomeprofiling/ribopy.git@380421e202f25a9829b36c1c1d5a8bf333d9188f
-    - git+https://github.com/ribosomeprofiling/RFCommands.git@a8ba526bcaebacf035dd1412915708d44065f1d9
+    - git+https://github.com/ribosomeprofiling/RFCommands.git@75b22f7911c9fd9e437f7fb3f8dcac31b0bf0aea

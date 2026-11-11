@@ -144,6 +144,7 @@ workflow GENOME_ALIGN {
 
     emit:
     transcriptome_bam        = STAR_ALIGN.out.transcriptome_bam  // [ meta, txbam ] (only if emitted)
+    dedup_bam                = ch_final_bam                      // [ smeta, bam, bai ] merged post-dedup (qpass if dedup none)
     genome_log               = STAR_ALIGN.out.log                // [ meta, log ]
     secondary_count          = STAR_ALIGN.out.secondary_count    // [ meta, count ]
     qpass_total_count        = ch_qpass_total                    // [ meta, total ]

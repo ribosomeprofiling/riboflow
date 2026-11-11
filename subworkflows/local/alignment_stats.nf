@@ -27,11 +27,13 @@ workflow ALIGNMENT_STATS {
     ch_qpass_unique_count      // [ meta, unique ]
     ch_individual_dedup_counts // [ meta, t, p, s, u ]
     ch_merged_dedup_counts     // [ smeta, t, p, s, u ] (EMPTY when dedup none)
+    ch_tx_lane_counts          // [ meta, count ] distinct reads in the STAR tx projection (EMPTY when not produced)
 
     main:
     def placeholder = file("${projectDir}/assets/NO_FILE.gz")
 
-    // Per-lane stats input: join everything on the per-lane meta.
+    // Per-lane stats input: join everything on the per-lane meta. The projection
+    // count is optional (remainder join → placeholder), everything else strict.
     ch_stats_in = ch_clip_log
         .join(ch_filter_log,              failOnMismatch: true, failOnDuplicate: true)
         .join(ch_genome_log,              failOnMismatch: true, failOnDuplicate: true)
@@ -41,6 +43,9 @@ workflow ALIGNMENT_STATS {
         .join(ch_qpass_secondary_count,   failOnMismatch: true, failOnDuplicate: true)
         .join(ch_individual_dedup_counts, failOnMismatch: true, failOnDuplicate: true)
         .join(ch_qpass_unique_count,      failOnMismatch: true, failOnDuplicate: true)
+        .join(ch_tx_lane_counts, remainder: true)
+        .filter { row -> row[1] != null }                                     // drop tx-only keys (never expected)
+        .map { row -> row[-1] == null ? row[0..-2] + [placeholder] : row }   // unmatched left row ends in one null
     STATS_INDIVIDUAL(ch_stats_in)
 
     // Combined per-lane essential CSV.

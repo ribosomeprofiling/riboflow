@@ -4,6 +4,7 @@
 include { PREPROCESS }                from '../subworkflows/local/preprocess.nf'
 include { GENOME_ALIGN }              from '../subworkflows/local/genome_align.nf'
 include { STAR_TRANSCRIPTOME_DEDUP }  from '../subworkflows/local/star_transcriptome_dedup.nf'
+include { STAR_TRANSCRIPTOME_DEDUP as RNASEQ_STAR_TRANSCRIPTOME_DEDUP } from '../subworkflows/local/star_transcriptome_dedup.nf'
 include { TRANSCRIPTOME_ALIGN }       from '../subworkflows/local/transcriptome_align.nf'
 include { ALIGNMENT_STATS }           from '../subworkflows/local/alignment_stats.nf'
 include { TRANSCRIPTOME_STATS }       from '../subworkflows/local/transcriptome_stats.nf'
@@ -184,8 +185,11 @@ workflow RIBOFLOW {
     if (do_genome) {
         GENOME_ALIGN(PREPROCESS.out.reads_for_genome, ch_genome_index)
 
+        ch_tx_counts = Channel.empty()
         if (Utils.do_tx_dedup(params)) {
-            STAR_TRANSCRIPTOME_DEDUP(GENOME_ALIGN.out.transcriptome_bam)
+            STAR_TRANSCRIPTOME_DEDUP(GENOME_ALIGN.out.transcriptome_bam, GENOME_ALIGN.out.dedup_bam,
+                                     Utils.resolve_dedup_method(params))
+            ch_tx_counts = STAR_TRANSCRIPTOME_DEDUP.out.lane_read_counts
         }
 
         ALIGNMENT_STATS(
@@ -199,6 +203,7 @@ workflow RIBOFLOW {
             GENOME_ALIGN.out.qpass_unique_count,
             GENOME_ALIGN.out.individual_dedup_counts,
             GENOME_ALIGN.out.merged_dedup_counts,
+            ch_tx_counts,
         )
     }
 
@@ -239,6 +244,14 @@ workflow RIBOFLOW {
 
         if (do_rna_genome) {
             RNASEQ_GENOME_ALIGN(RNASEQ_PREPROCESS.out.reads_for_genome, ch_genome_index)
+
+            ch_rna_tx_counts = Channel.empty()
+            if (Utils.do_tx_dedup(params)) {
+                RNASEQ_STAR_TRANSCRIPTOME_DEDUP(RNASEQ_GENOME_ALIGN.out.transcriptome_bam, RNASEQ_GENOME_ALIGN.out.dedup_bam,
+                                                Utils.resolve_rnaseq_dedup_method(params))
+                ch_rna_tx_counts = RNASEQ_STAR_TRANSCRIPTOME_DEDUP.out.lane_read_counts
+            }
+
             RNASEQ_GENOME_STATS(
                 RNASEQ_PREPROCESS.out.clip_log,
                 RNASEQ_PREPROCESS.out.filter_log,
@@ -250,6 +263,7 @@ workflow RIBOFLOW {
                 RNASEQ_GENOME_ALIGN.out.qpass_unique_count,
                 RNASEQ_GENOME_ALIGN.out.individual_dedup_counts,
                 RNASEQ_GENOME_ALIGN.out.merged_dedup_counts,
+                ch_rna_tx_counts,
             )
         }
 

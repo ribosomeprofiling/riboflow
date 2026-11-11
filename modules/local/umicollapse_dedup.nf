@@ -35,6 +35,9 @@ process UMICOLLAPSE_DEDUP {
     def jvm_opts         = task.ext.jvm_opts ?: "-Xms512m -Xmx${heap_gb}g -Xss256m"
     def emit_counts      = task.ext.emit_counts ?: false
     def emit_full_counts = (task.ext.emit_full_counts != null) ? task.ext.emit_full_counts : !Utils.route_unique_only(params, route)
+    // ext.two_pass = false disables --two-pass: UMICollapse's two-pass mode NPEs
+    // (DeduplicateSAM.java:400) on STAR transcriptome BAMs; single pass needs more heap.
+    def two_pass         = (task.ext.two_pass != null ? task.ext.two_pass : true) ? '--two-pass' : ''
     def is_pe            = meta.single_end == false
     def paired_arg       = is_pe ? '--paired' : ''
     def counts           = emit_counts
@@ -53,7 +56,7 @@ process UMICOLLAPSE_DEDUP {
         --umi-sep "_" \\
         --algo ${algo} \\
         --merge mapqual \\
-        --two-pass \\
+        ${two_pass} \\
         ${paired_arg} \\
         ${args}
     mv umicollapse.tmp.bam ${prefix}.bam

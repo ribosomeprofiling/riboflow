@@ -126,6 +126,21 @@ nextflow_pipeline {
         }
     }
 
+    // STAR transcriptome projection on both genome paths at once: ribo-seq under
+    // the test profile's position dedup, PE RNA-seq under dedup none. Each lane
+    // gets a distinct-read count file for the `transcriptome_projection` stats row.
+    test("rnaseq PE genome path - STAR transcriptome projection (none) + ribo projection (position)") {
+        options "-stub-run -c ${projectDir}/tests/pipeline/rnaseq_pe.config -c ${projectDir}/tests/pipeline/rnaseq_pe_txbam.config -c ${projectDir}/tests/pipeline/no_tx.config"
+        then {
+            assert workflow.success
+            def inter = "${projectDir}/tests/stub/rnatx_intermediates"
+            assert new File("${inter}/rnaseq/star_transcriptome/alignment/merged").list().contains('P1.rnaseq.star_transcriptome.qpass.merged.bam')
+            assert new File("${inter}/rnaseq/star_transcriptome/alignment_ribo/individual").list().contains('P1.1.rnaseq.star_transcriptome.reads.count')
+            assert new File("${inter}/star_transcriptome/alignment_ribo/merged").list().contains('S1.star_transcriptome.post_dedup.bam')
+            assert new File("${inter}/star_transcriptome/alignment_ribo/individual").list().contains('S1.1.star_transcriptome.reads.count')
+        }
+    }
+
     // Gating check: with dedup on, the qpass BAM must stay in intermediates (the
     // dedup BAM is the published artifact). Runs against its own output base so a
     // dedup-none case above can never leave a stale BAM that fakes a pass here.

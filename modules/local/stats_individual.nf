@@ -22,7 +22,8 @@ process STATS_INDIVIDUAL {
           path(qpass_secondary, stageAs: 'qpass_secondary.count'),
           path('dedup.total.count'), path('dedup.primary.count'), path('dedup.secondary.count'),
           path('dedup.unique.count'),
-          path(qpass_unique, stageAs: 'qpass_unique.count')
+          path(qpass_unique, stageAs: 'qpass_unique.count'),
+          path(tx_count,     stageAs: 'tx_projection.count')   // NO_FILE.gz placeholder when no STAR tx projection
 
     output:
     tuple val(meta),
@@ -34,13 +35,14 @@ process STATS_INDIVIDUAL {
     def route       = task.ext.route ?: 'genome'
     def unique_only = Utils.route_unique_only(params, route)
     def mode_args   = unique_only ? '--unique-only' : '--multi --qpass-unique qpass_unique.count --dedup-unique dedup.unique.count'
+    def tx_args     = (tx_count.name == 'NO_FILE.gz') ? '' : '--tx-projection-count tx_projection.count'
     """
     rfc stats-individual --route genome --prefix ${prefix} \\
         --clip-log ${clip_log} --filter-log ${filter_log} --align-log ${genome_log} \\
         --genome-secondary-count ${genome_secondary_count} \\
         --qpass-total qpass_total.count --qpass-primary qpass_primary.count --qpass-secondary qpass_secondary.count \\
         --dedup-total dedup.total.count --dedup-primary dedup.primary.count --dedup-secondary dedup.secondary.count \\
-        ${mode_args} \\
+        ${mode_args} ${tx_args} \\
         -o ${prefix}.${label}_individual.csv
     """
 

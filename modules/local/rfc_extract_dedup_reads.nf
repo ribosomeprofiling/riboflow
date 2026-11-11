@@ -1,6 +1,7 @@
 // Extract the reads of a qpass merged BAM that match an rfc-dedup BED, giving a
 // sample-level post-dedup BAM. With ext.emit_counts it also writes the merged
 // total count, plus primary, secondary and unique counts in multi-mapper mode.
+// ext.unsorted skips the index (read-name-grouped STAR projection BAM).
 process RFC_EXTRACT_DEDUP_READS {
     tag "${meta.id}"
 
@@ -9,7 +10,7 @@ process RFC_EXTRACT_DEDUP_READS {
 
     output:
     tuple val(meta), path("${task.ext.prefix ?: meta.id + '.post_dedup'}.bam"),
-                     path("${task.ext.prefix ?: meta.id + '.post_dedup'}.bam.bai"), emit: bam
+                     path("${task.ext.prefix ?: meta.id + '.post_dedup'}.bam.bai", arity: '0..*'), emit: bam
     tuple val(meta), path("${meta.id}.merged_dedup.total.count"),
                      optional: true, emit: total_count
     tuple val(meta), path("${meta.id}.merged_dedup.primary.count"),
@@ -23,6 +24,7 @@ process RFC_EXTRACT_DEDUP_READS {
     def emit_counts      = task.ext.emit_counts ?: false
     def emit_full_counts = (task.ext.emit_full_counts != null) ? task.ext.emit_full_counts : !Utils.route_unique_only(params, route)
     def is_pe            = meta.single_end == false
+    def index_cmd        = task.ext.unsorted ? '' : "samtools index -@ ${task.cpus} ${prefix}.bam"
     def counts           = emit_counts
         ? Utils.samtools_count_block(Utils.route_count_args(params, route), is_pe,
                                      "${prefix}.bam", "${meta.id}.merged_dedup", task.cpus as int,
@@ -37,7 +39,7 @@ process RFC_EXTRACT_DEDUP_READS {
     else
         samtools view -H ${qpass_bam} | samtools view -b -o ${prefix}.bam
     fi
-    samtools index -@ ${task.cpus} ${prefix}.bam
+    ${index_cmd}
     ${counts}
     """
 

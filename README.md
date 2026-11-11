@@ -12,11 +12,11 @@ RiboFlow is a [Nextflow](https://www.nextflow.io/) pipeline for processing ribos
 
 For each sample the pipeline trims adapters, removes rRNA/tRNA reads, aligns the rest, removes duplicates and writes alignment statistics. It has three parts, and you can turn each one on or off in the params file:
 
-| Part | Turned on by | Produces |
-|---|---|---|
-| Genome alignment (STAR) | `genome.run: true` (default) | BAM and BED files, `stats.csv` |
-| Transcriptome alignment (bowtie2) | `transcriptome.run: true` | one `.ribo` file per sample and a merged `all.ribo` |
-| RNA-seq | `do_rnaseq: true` | the same for matching RNA-seq samples, added into the `.ribo` files |
+| Part                              | Turned on by                   | Produces                                                              |
+| --------------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| Genome alignment (STAR)           | `genome.run: true` (default) | BAM and BED files, `stats.csv`                                      |
+| Transcriptome alignment (bowtie2) | `transcriptome.run: true`    | one `.ribo` file per sample and a merged `all.ribo`               |
+| RNA-seq                           | `do_rnaseq: true`            | the same for matching RNA-seq samples, added into the `.ribo` files |
 
 ## Contents
 
@@ -35,7 +35,7 @@ For each sample the pipeline trims adapters, removes rRNA/tRNA reads, aligns the
 
 These steps are for Linux (x86-64). On other systems use the Docker image (see [Where to run it](#where-to-run-it)).
 
-**1. Install Miniconda** if you do not have `conda`: <https://docs.conda.io/en/latest/miniconda.html>. Open a new terminal afterwards.
+**1. Install Miniconda** if you do not have `conda`: [https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html). Open a new terminal afterwards.
 
 **2. Download the pipeline.**
 
@@ -44,7 +44,7 @@ git clone https://github.com/ribosomeprofiling/riboflow.git
 cd riboflow
 ```
 
-**3. Create the environment.** This installs Nextflow and every tool the pipeline uses.
+**3. Create the environment.** 
 
 ```bash
 conda env create -f environment.yaml
@@ -76,17 +76,17 @@ The other four example files run the same way. See [Running on your data](#runni
 
 `-profile` takes two parts: where the tools come from, and how big the machine is.
 
-| Tools | Flag | Notes |
-|---|---|---|
-| Your active conda env | *(nothing)* | As in the Quickstart. Tools must be on `PATH`. |
-| Conda managed by Nextflow | `conda` | Nextflow builds the env from `environment.yaml`. |
-| Docker | `docker` | Uses `danielnguyener/riboflow:2.0.0`. Works on macOS and Windows. |
-| Apptainer / Singularity | `apptainer` | Same image. For HPC clusters. |
+| Tools                     | Flag          | Notes                                                               |
+| ------------------------- | ------------- | ------------------------------------------------------------------- |
+| Your active conda env     | *(nothing)* | As in the Quickstart. Tools must be on `PATH`.                    |
+| Conda managed by Nextflow | `conda`     | Nextflow builds the env from `environment.yaml`.                  |
+| Docker                    | `docker`    | Uses `danielnguyener/riboflow:2.0.0`. Works on macOS and Windows. |
+| Apptainer / Singularity   | `apptainer` | Same image. For HPC clusters.                                       |
 
-| Machine | Flag | Sized for |
-|---|---|---|
-| Workstation | `default` | 16 cores, 64 GB RAM. Used when you give no machine flag. |
-| TACC Lonestar6 | `lonestar6` | One full node, 128 cores, 256 GB RAM. |
+| Machine        | Flag          | Sized for                                                |
+| -------------- | ------------- | -------------------------------------------------------- |
+| Workstation    | `default`   | 16 cores, 64 GB RAM. Used when you give no machine flag. |
+| TACC Lonestar6 | `lonestar6` | One full node, 128 cores, 256 GB RAM.                    |
 
 Combine them with a comma:
 
@@ -109,13 +109,13 @@ nextflow run /path/to/riboflow/main.nf -profile lonestar6 -params-file my_run.ya
 
 Start from the example file closest to your experiment and edit it.
 
-| Example | Duplicate removal | Covers |
-|---|---|---|
-| `examples/example_position_multi.yaml` | by position | Genome, transcriptome and RNA-seq. Several lanes per sample. |
-| `examples/example_umi_uniq.yaml` | by UMI | Same, for libraries with UMIs. |
-| `examples/example_transcriptome_only.yaml` | by UMI | Transcriptome only, no STAR genome alignment. |
-| `examples/example_build_index.yaml` | by UMI | Builds the STAR index from a FASTA and GTF instead of using a prebuilt one. |
-| `examples/example_rnaseq_pe.yaml` | none | Paired-end RNA-seq. Also keeps multi-mapping reads. |
+| Example                                      | Duplicate removal | Covers                                                                      |
+| -------------------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `examples/example_position_multi.yaml`     | by position       | Genome, transcriptome and RNA-seq. Several lanes per sample.                |
+| `examples/example_umi_uniq.yaml`           | by UMI            | Same, for libraries with UMIs.                                              |
+| `examples/example_transcriptome_only.yaml` | by UMI            | Transcriptome only, no STAR genome alignment.                               |
+| `examples/example_build_index.yaml`        | by UMI            | Builds the STAR index from a FASTA and GTF instead of using a prebuilt one. |
+| `examples/example_rnaseq_pe.yaml`          | none              | Paired-end RNA-seq. Also keeps multi-mapping reads.                         |
 
 The shipped STAR index is a small example reference. For real data point `input.reference.genome` at an index for your genome (see [STAR genome index](#star-genome-index)).
 
@@ -136,9 +136,7 @@ Run it:
 nextflow run main.nf -profile default -params-file my_run.yaml
 ```
 
-Add `-resume` to rerun after changing a setting; finished steps are reused.
 
-Settings that belong to a group, such as `genome.run`, go in the params file. Do not pass them on the command line as `--genome.run false`: Nextflow replaces the whole `genome` group with just that one key.
 
 ### Which reads are kept
 
@@ -184,15 +182,15 @@ Paths below use `<out>` and `<inter>` for the two folders set in the params file
 
 `stats.csv` reports read counts at each step: total, after trimming, after the rRNA filter, aligned once, aligned to several places, unaligned, after the quality filter and after duplicate removal.
 
-`<inter>/` holds everything in between: trimmed FASTQs, rRNA filter BAMs, STAR and bowtie2 BAMs and logs, quality-filtered BAMs and BEDs. They are kept so you can look at the reads at any step. The folder can be deleted; a rerun recreates what it needs.
+`<inter>/` holds everything in between: trimmed FASTQs, rRNA filter BAMs, STAR and bowtie2 BAMs and logs, quality-filtered BAMs and BEDs. They are kept so you can look at the reads at any step.
 
-Lane numbers come from the order of the files in the params file. If you reorder or add FASTQs for a sample, delete that sample's intermediates first, otherwise files from the old order are reused.
+Lane numbers come from the order of the files in the `yaml` file. If you reorder or add FASTQs for a sample, delete that sample's intermediates first before resuming paused runs.
 
 ## STAR genome index
 
 Give either a prebuilt index or the files to build one, not both.
 
-**Prebuilt index:**
+**Prebuilt index:
 
 ```yaml
 input:
@@ -206,7 +204,7 @@ Build it with the STAR version in `environment.yaml`:
 STAR --runMode genomeGenerate --runThreadN 16 \
   --genomeDir /path/to/STAR_index \
   --genomeFastaFiles genome.fa --sjdbGTFfile annotation.gtf \
-  --sjdbOverhang 28
+  --sjdbOverhang 100
 ```
 
 **Built by the pipeline:**
@@ -221,15 +219,14 @@ star:
   index_dir: /path/to/cache    # the built index is saved here and reused by later runs
 ```
 
-Use `sjdb_overhang: 28` for ribosome profiling (footprints are about 26 to 34 nt after trimming). The default, 100, suits full-length RNA-seq reads. `examples/example_build_index.yaml` shows this mode.
 
 ## Deduplication
 
-| `dedup_method` | What it does |
-|---|---|
-| `umicollapse` | Uses UMIs. Needs `umi_tools_extract_arguments` to say where the UMI sits in the read. |
-| `position` | Treats reads with the same position, length and strand as duplicates. For libraries without UMIs. |
-| `none` | No duplicate removal. |
+| `dedup_method` | What it does                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `umicollapse`  | Uses UMIs. Needs `umi_tools_extract_arguments` 
+| `position`     | Treats reads with the same position, length and strand as duplicates. For libraries without UMIs. |
+| `none`         | No duplicate removal.                                                                             |
 
 ```yaml
 dedup_method: "umicollapse"
@@ -257,7 +254,7 @@ Set `do_rnaseq: true` and list FASTQs under `rnaseq.fastq` using the same sample
 
 Give a lane as a pair of files, `[R1, R2]`. Paired-end works for the genome alignment with `rnaseq.dedup_method` `none` or `umicollapse`; `position` and the transcriptome path do not support paired-end and stop the run with a message. Counts in `stats.csv` are per fragment, not per mate.
 
-For paired-end data add `-f 2` to `rnaseq.genome.samtools_filter_arguments` to keep only properly paired reads. Do not use `-f 2` for single-end data; it would remove every read.
+For paired-end data add `-f 2` to `rnaseq.genome.samtools_filter_arguments` to keep only properly paired reads.
 
 A pair is removed by the rRNA filter only when both mates align to it together. See `examples/example_rnaseq_pe.yaml`.
 
@@ -272,7 +269,7 @@ genome:
   samtools_filter_arguments: "-F 2052"   # keep secondary alignments too
 ```
 
-`stats.csv` then adds rows splitting the kept reads into unique, multi-mapping and secondary alignments. How those rows are counted can be changed with `samtools_count_arguments`; the defaults are commented in the example files and are right for STAR.
+`stats.csv` then adds rows splitting the kept reads into unique, multi-mapping and secondary alignments. How those rows are counted can be changed with `samtools_count_arguments`
 
 `rnaseq.genome` has the same settings for RNA-seq.
 
@@ -291,13 +288,13 @@ Examples are in `meta/`. Check what was stored with `ribopy meta info <out>/ribo
 
 ### Other settings
 
-| Setting | Effect |
-|---|---|
-| `do_strand_split` | Splits each final ribo-seq BAM into plus and minus strand BAM and BED files. |
-| `do_bigwig` | Writes strand-specific bigWig coverage tracks. Slow. |
-| `do_fastqc` | Runs FastQC on the raw, trimmed, aligned and unaligned reads. |
-| `do_check_file_existence` | Checks that every input path exists before starting. On in all examples. |
-| `star.output_transcriptome_bam` | STAR also writes a BAM in transcriptome coordinates, deduplicated into `<inter>/star_transcriptome/`, for tools such as Salmon. |
+| Setting                           | Effect                                                                                                                                                                                                                                                    |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `do_strand_split`               | Splits each final ribo-seq BAM into plus and minus strand BAM and BED files.                                                                                                                                                                              |
+| `do_bigwig`                     | Writes strand-specific bigWig coverage tracks. Slow.                                                                                                                                                                                                      |
+| `do_fastqc`                     | Runs FastQC on the raw, trimmed, aligned and unaligned reads.                                                                                                                                                                                             |
+| `do_check_file_existence`       | Checks that every input path exists before starting. On in all examples.                                                                                                                                                                                  |
+| `output_transcriptome_bam` | STAR also writes a BAM in transcriptome coordinates (ribo-seq and, with `do_rnaseq`, RNA-seq), filtered and deduplicated like the genome BAM into `<inter>/star_transcriptome/` and `<inter>/rnaseq/star_transcriptome/`, for tools such as Salmon. |
 
 ## Citing
 

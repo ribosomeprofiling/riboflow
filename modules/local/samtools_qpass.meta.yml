@@ -1,5 +1,5 @@
 name: SAMTOOLS_QPASS
-description: Quality-pass filter (MAPQ + FLAG) + counts. ext.presort coord-sorts first (transcriptome BAM).
+description: Quality-pass filter (MAPQ + FLAG) + counts. ext.unsorted skips the index (STAR transcriptome-projection BAM, kept read-name grouped).
 keywords: [samtools, filter, mapq]
 input:
   - meta: { type: map }
@@ -8,4 +8,4 @@ output:
   - bam:    { description: "[meta, *.qpass.bam, *.qpass.bam.bai]" }
   - counts: { description: "[meta, total, primary, secondary]" }
 ext:
-  - prefix, presort
+  - prefix, unsorted

@@ -124,6 +124,8 @@ workflow RNASEQ_GENOME_ALIGN {
     DEEPTOOLS_BAMCOVERAGE(ch_final_bam, 'rna')
 
     emit:
+    transcriptome_bam        = STAR_ALIGN_RNASEQ.out.transcriptome_bam  // [ meta, txbam ] (only if emitted)
+    dedup_bam                = ch_final_bam                             // [ smeta, bam, bai ] merged post-dedup (qpass if dedup none)
     genome_log               = STAR_ALIGN_RNASEQ.out.log
     secondary_count          = STAR_ALIGN_RNASEQ.out.secondary_count
     qpass_total_count        = ch_qpass_total

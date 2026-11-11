@@ -1,6 +1,7 @@
 // Quality-pass filter: a MAPQ cutoff plus a user-supplied record filter, with one
-// count file per read type. With ext.presort the BAM is coordinate-sorted after
-// filtering, which the QNAME-sorted STAR transcriptome BAM needs.
+// count file per read type. With ext.unsorted the input order is kept and no index
+// is written (no .bai emitted): the STAR transcriptome-projection BAM must stay
+// grouped by read name for Salmon, so it is never coordinate-sorted.
 //
 // ext.route picks the params block: genome, transcriptome, rnaseq_genome,
 // rnaseq_transcriptome or star_transcriptome. Utils resolves from it:
@@ -25,7 +26,7 @@ process SAMTOOLS_QPASS {
     // into another's output filenames.
     output:
     tuple val(meta), path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.bam"),
-                     path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.bam.bai"), emit: bam
+                     path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.bam.bai", arity: '0..*'), emit: bam
     tuple val(meta), path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.total.count"),     emit: total_count
     tuple val(meta), path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.primary.count"),   optional: true, emit: primary_count
     tuple val(meta), path("${task.ext.prefix ?: meta.id + '.' + meta.lane + '.genome_alignment'}.qpass.secondary.count"), optional: true, emit: secondary_count
@@ -34,25 +35,22 @@ process SAMTOOLS_QPASS {
     script:
     def prefix       = task.ext.prefix ?: "${meta.id}.${meta.lane}.genome_alignment"
     def route        = task.ext.route ?: 'genome'
-    def presort      = task.ext.presort ?: false
+    def unsorted     = task.ext.unsorted ?: false
     def unique_only  = Utils.route_unique_only(params, route)
     def mapq         = Utils.route_effective_mapq(params, route)
     def filter_args  = Utils.shell_quote_args(Utils.route_filter_args(params, route))
     def emit_ps      = (task.ext.emit_primary_secondary != null) ? task.ext.emit_primary_secondary : !unique_only
     def count_unique = (task.ext.count_unique != null) ? task.ext.count_unique : !unique_only
     def is_pe        = meta.single_end == false
-    def sort_threads = Math.min(task.cpus as int, 8)
-    def sort_mem     = Utils.samtools_sort_mem_per_thread_mb(task)
     // `-b -q`, not `-bq`, so the user's arguments append cleanly after the cutoff.
-    def make_bam     = presort \
-        ? "samtools view -h -b -q ${mapq} ${filter_args} ${bam} | samtools sort -@ ${sort_threads} -m ${sort_mem}M -o ${prefix}.qpass.bam -" \
-        : "samtools view -@ ${task.cpus} -b -q ${mapq} ${filter_args} ${bam} > ${prefix}.qpass.bam"
+    def make_bam     = "samtools view -@ ${task.cpus} -b -q ${mapq} ${filter_args} ${bam} > ${prefix}.qpass.bam"
+    def index_cmd    = unsorted ? '' : "samtools index -@ ${task.cpus} ${prefix}.qpass.bam"
     def counts       = Utils.samtools_count_block(Utils.route_count_args(params, route), is_pe,
                                                   "${prefix}.qpass.bam", "${prefix}.qpass", task.cpus as int,
                                                   emit_ps, count_unique)
     """
     ${make_bam}
-    samtools index -@ ${task.cpus} ${prefix}.qpass.bam
+    ${index_cmd}
     ${counts}
     """
 
